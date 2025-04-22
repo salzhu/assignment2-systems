@@ -226,9 +226,9 @@ def flash_fwd_kernel(
         # assert l.shape == (Q_TILE_SIZE) 
         
         # O = tl.dot(diag, O)
-        diag = tl.exp(m[:] - m_ij[:])
-        O2 = O * diag[:, None]
-        O2 += tl.dot(P_ij, V_j)
+        # diag = tl.exp(m[:] - m_ij[:])
+        # O2 = O * diag[:, None]
+        # O2 += tl.dot(P_ij, V_j)
 
         K_tile_ptr = K_tile_ptr.advance((K_TILE_SIZE,))
         V_tile_ptr = V_tile_ptr.advance((K_TILE_SIZE,))

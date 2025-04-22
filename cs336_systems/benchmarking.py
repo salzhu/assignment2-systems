@@ -13,6 +13,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cs336_basics.model import BasicsTransformerLM
+from cs336_basics.optimizer import AdamW
 
 def end_to_end_benchmark(model, data, w, n, cast=False, dtype=torch.float32):
 

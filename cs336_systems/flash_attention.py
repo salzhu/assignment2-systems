@@ -281,19 +281,19 @@ class FlashAttentionTriton(torch.autograd.Function):
 
         # launch grid: (T_q, batch_size)
 
-        # flash_fwd_kernel[(T_q, batch_size)](
-        #     Q, K, V, 
-        #     O, L,
-        #     Q.stride(0), Q.stride(1), Q.stride(2),
-        #     K.stride(0), K.stride(1), K.stride(2),
-        #     V.stride(0), V.stride(1), V.stride(2),
-        #     O.stride(0), O.stride(1), O.stride(2),
-        #     L.stride(0), L.stride(1), 
-        #     T_q, T_k, 
-        #     scale=1/np.sqrt(D),
-        #     D=D,
-        #     Q_TILE_SIZE=Q_TILE_SIZE, K_TILE_SIZE=K_TILE_SIZE
-        # )
+        flash_fwd_kernel[(T_q, batch_size)](
+            Q, K, V, 
+            O, L,
+            Q.stride(0), Q.stride(1), Q.stride(2),
+            K.stride(0), K.stride(1), K.stride(2),
+            V.stride(0), V.stride(1), V.stride(2),
+            O.stride(0), O.stride(1), O.stride(2),
+            L.stride(0), L.stride(1), 
+            T_q, T_k, 
+            scale=1/np.sqrt(D),
+            D=D,
+            Q_TILE_SIZE=Q_TILE_SIZE, K_TILE_SIZE=K_TILE_SIZE
+        )
                 
         # reshape O, L
         # O = rearrange(O, 'T_q batch B_q d -> batch (T_q B_q) d')
@@ -301,8 +301,8 @@ class FlashAttentionTriton(torch.autograd.Function):
 
         # might need to reshape O, L
 
-        O = torch.zeros((batch_size, D1, D2)).to(device)
-        L = torch.zeros((batch_size, D1)).to(device)
+        # O = torch.zeros((batch_size, D1, D2)).to(device)
+        # L = torch.zeros((batch_size, D1)).to(device)
 
         print(L.shape)
         

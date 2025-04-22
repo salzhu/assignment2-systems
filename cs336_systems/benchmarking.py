@@ -102,8 +102,8 @@ def memory_profiling(name, batch_size, vocab_size, context_length, d_model, n_la
         for i in range(warmup_its):
             preds = model(batch)
             torch.cuda.synchronize()
-            preds.mean().backward()
-            torch.cuda.synchronize()
+            # preds.mean().backward()
+            # torch.cuda.synchronize()
 
         # n steps, timed 
 
@@ -116,8 +116,8 @@ def memory_profiling(name, batch_size, vocab_size, context_length, d_model, n_la
             torch.cuda.synchronize()
 
             # backward pass on predictions
-            preds.mean().backward()
-            torch.cuda.synchronize()
+            # preds.mean().backward()
+            # torch.cuda.synchronize()
 
     # Save a pickle file to be loaded by PyTorch's online tool.
     torch.cuda.memory._dump_snapshot(f"{name}.pickle")

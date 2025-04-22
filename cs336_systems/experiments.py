@@ -129,9 +129,8 @@ def part_1_1_6():
     uv run cs336_systems/tables.py --part 1.1.5 --cast_115 True --dtype_115 torch.bfloat16
     """
 
-    context_lens = [256]
-    models = ['small', 'medium', 'large', 'xl', '2.7B']
-    model = ['small']
+    context_lens = [128, 256, 512]
+    models = ['2.7B']
 
     for context_len in context_lens:
         for model in models:

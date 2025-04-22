@@ -261,17 +261,23 @@ class FlashAttentionTriton(torch.autograd.Function):
         batch_size = Q.shape[0]
         D = Q.shape[1]
 
+        D1 = Q.shape[1]
+        D2 = Q.shape[2]
+
         # T_q = tl.cdiv(D, Q_TILE_SIZE)
         # T_k = tl.cdiv(D, K_TILE_SIZE)
 
         T_q = D // Q_TILE_SIZE
         T_k = D // K_TILE_SIZE
 
+        T_q = D1 // Q_TILE_SIZE
+        T_k = D2 // K_TILE_SIZE
+
         # O = torch.empty((T_q, batch_size, Q_TILE_SIZE, D))
         # L = torch.empty((T_q, batch_size, Q_TILE_SIZE))
 
-        O = torch.empty((batch_size, D, D))
-        L = torch.empty((batch_size, D))
+        O = torch.empty((batch_size, D1, D2))
+        L = torch.empty((batch_size, D1))
 
         # launch grid: (T_q, batch_size)
 
@@ -295,8 +301,8 @@ class FlashAttentionTriton(torch.autograd.Function):
 
         # might need to reshape O, L
 
-        O = torch.zeros((batch_size, D, D))
-        L = torch.zeros((batch_size, D))
+        O = torch.zeros((batch_size, D1, D2))
+        L = torch.zeros((batch_size, D1))
 
         print(L.shape)
         

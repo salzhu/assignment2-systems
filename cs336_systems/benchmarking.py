@@ -86,6 +86,9 @@ def memory_profiling(name, batch_size, vocab_size, context_length, d_model, n_la
     )
     model.to(device)
     batch = torch.randint(low=0, high=vocab_size, size=(batch_size, context_length), device=device)
+    optimizer = AdamW(
+        model.parameters()
+    )
     torch.cuda.synchronize()
 
     # warm-up phase in your benchmarking script
@@ -100,10 +103,12 @@ def memory_profiling(name, batch_size, vocab_size, context_length, d_model, n_la
 
         # w warmup steps, no timing
         for i in range(warmup_its):
+            optimizer.zero_grad()
             preds = model(batch)
             torch.cuda.synchronize()
-            # preds.mean().backward()
-            # torch.cuda.synchronize()
+            preds.mean().backward()
+            optimizer.step()
+            torch.cuda.synchronize()
 
         # n steps, timed 
 
@@ -112,12 +117,14 @@ def memory_profiling(name, batch_size, vocab_size, context_length, d_model, n_la
         for i in range(n_steps):
 
             # forward pass of model on data 
+            optimizer.zero_grad()
             preds = model(batch)
             torch.cuda.synchronize()
 
             # backward pass on predictions
-            # preds.mean().backward()
-            # torch.cuda.synchronize()
+            preds.mean().backward()
+            optimizer.step()
+            torch.cuda.synchronize()
 
     # Save a pickle file to be loaded by PyTorch's online tool.
     torch.cuda.memory._dump_snapshot(f"{name}.pickle")

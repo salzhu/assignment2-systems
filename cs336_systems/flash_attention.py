@@ -294,6 +294,9 @@ class FlashAttentionTriton(torch.autograd.Function):
         # L = rearrange(L, 'T_q batch B_q -> batch (T_q B_q)')
 
         # might need to reshape O, L
+
+        O = torch.zeros((batch_size, D, D))
+        L = torch.zeros((batch_size, D))
         
         ctx.save_for_backward(L)
         return O #, L

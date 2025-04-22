@@ -276,8 +276,8 @@ class FlashAttentionTriton(torch.autograd.Function):
         # O = torch.empty((T_q, batch_size, Q_TILE_SIZE, D))
         # L = torch.empty((T_q, batch_size, Q_TILE_SIZE))
 
-        O = torch.empty((batch_size, D1, D2))
-        L = torch.empty((batch_size, D1))
+        O = torch.empty((batch_size, D1, D2)).to(device)
+        L = torch.empty((batch_size, D1)).to(device)
 
         # launch grid: (T_q, batch_size)
 
@@ -301,8 +301,8 @@ class FlashAttentionTriton(torch.autograd.Function):
 
         # might need to reshape O, L
 
-        O = torch.zeros((batch_size, D1, D2))
-        L = torch.zeros((batch_size, D1))
+        O = torch.zeros((batch_size, D1, D2)).to(device)
+        L = torch.zeros((batch_size, D1)).to(device)
 
         print(L.shape)
         

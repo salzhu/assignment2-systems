@@ -135,7 +135,7 @@ def part_1_1_6():
     for context_len in context_lens:
         for model in models:
             print(f'running model {model}_{context_len}')
-            memory_profiling(f'{model}_{context_len}_full_mixed',
+            memory_profiling(f'{model}_{context_len}_forward_mixed',
                              4, 10000, context_len, 
                              model_list[model]['d_model'], 
                              model_list[model]['n_layers'], 

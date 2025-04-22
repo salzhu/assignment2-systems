@@ -1,0 +1,330 @@
+import torch 
+import numpy as np 
+from einops import rearrange, einsum, reduce
+
+import os
+# os.environ["TRITON_INTERPRET"] = "1"
+
+import triton
+import triton.language as tl
+
+
+def manual_backward(Q, K, V, O, dO, L):
+    return 
+
+class FlashAttentionTorch(torch.autograd.Function):
+
+    compiled_backward = torch.compile(manual_backward)
+    
+    @staticmethod
+    def forward(ctx, Q, K, V, is_causal):
+
+        B_q = 16
+        B_k = 8
+
+        if len(Q.shape) == 2: Q = Q.unsqueeze(0)
+        if len(K.shape) == 2: K = K.unsqueeze(0)
+        if len(V.shape) == 2: V = V.unsqueeze(0)
+
+        d = Q.shape[1]
+
+        Q = rearrange(Q, "batch (T_q B_q) d -> T_q batch B_q d", B_q = B_q)
+        K = rearrange(K, "batch (T_k B_k) d -> T_k batch B_k d", B_k = B_k)
+        V = rearrange(V, "batch (T_k B_k) d -> T_k batch B_k d", B_k = B_k)
+
+        d = Q.shape[-1]
+
+        T_q = Q.shape[0]
+        T_k = K.shape[0]
+
+        assert K.shape == V.shape 
+        assert Q.shape[1] == K.shape[1]
+
+        batch = Q.shape[1]
+
+        O = torch.empty((T_q, batch, B_q, d))
+        L = torch.empty((T_q, batch, B_q))
+
+        for i in range(T_q):
+
+            # Load Q_i from global memory 
+            Q_i = Q[i]
+
+            O_i = torch.empty(batch, B_q, d)
+            l_i = torch.empty(batch, B_q)
+            m_i = torch.empty(batch, B_q)
+
+            O_i[:, :, :] = 0 
+            l_i[:, :] = 0
+            m_i[:, :] = -1 * float('inf')
+
+            for j in range(1, T_k + 1):
+                # Load K_j, V_j from global memory 
+                K_j = K[j-1] # shape batch x B_k x d
+                V_j = V[j-1] 
+
+                S_ij = einsum(Q_i, K_j, "batch B_q d, batch B_k d -> batch B_q B_k") / np.sqrt(d) 
+                rowmax = reduce(S_ij, "batch B_q B_k -> batch B_q", 'max') 
+                m_ij = torch.maximum(m_i[:, :], rowmax) 
+                assert S_ij.shape == (batch, B_q, B_k) 
+                assert m_ij.shape == (batch, B_q) 
+
+                P_ij = torch.exp(S_ij - m_ij.unsqueeze(-1)) 
+                assert P_ij.shape == (batch, B_q, B_k) 
+
+                l_i = torch.exp(m_i[:, :] - m_ij) * l_i[:, :] + reduce(P_ij, "batch B_q B_k -> batch B_q", 'sum') 
+                assert l_i.shape == (batch, B_q) 
+
+                O_i = einsum(
+                    torch.diag_embed(torch.exp(m_i[:, :] - m_ij)), 
+                    O_i[:, :, :], 
+                    "batch B_q B_q, batch B_q d -> batch B_q d"
+                )
+                O_i += einsum(
+                    P_ij, V_j, 
+                    "batch B_q B_k, batch B_k d -> batch B_q d"
+                )
+
+                # fill in 
+                # O_i[:, :, :] = O_ij 
+                # l_i[:, :] = l_ij 
+                # m_i[:, :] = m_ij 
+                m_i = m_ij
+
+            j = T_k
+            
+            # Write O_i, L_i to global memory 
+            O[i, :, :, :] = einsum(
+                torch.linalg.inv(torch.diag_embed(l_i[:, :])), O_i[:, :, :], 
+                'batch B_q B_q, batch B_q d -> batch B_q d'
+            )
+            L[i, :, :] = m_i[:, :] + torch.log(l_i[:, :])
+                
+        # reshape O, L
+        O = rearrange(O, 'T_q batch B_q d -> batch (T_q B_q) d')
+        L = rearrange(L, 'T_q batch B_q -> batch (T_q B_q)')
+        
+        ctx.save_for_backward(L)
+        return O #, L
+    
+    @staticmethod
+    def backward(ctx, Q, K, V, O, dO, L):
+        
+        return ctx.compiled_backward(Q, K, V, O, dO, L)
+
+
+@triton.jit
+def fill_diagonal(
+    diag,            # the diagonal matrix (Triton tensor)
+    values,          # values to fill the diagonal with (Triton tensor)
+    N,               # size of the square matrix
+):
+    # Iterate over the diagonal
+    for i in range(N):
+        # Set the value on the diagonal
+        diag[i, i] = values[i]
+
+@triton.jit
+def flash_fwd_kernel(
+    Q_ptr, K_ptr, V_ptr,
+    O_ptr, L_ptr,
+    stride_qb, stride_qq, stride_qd,
+    stride_kb, stride_kk, stride_kd,
+    stride_vb, stride_vk, stride_vd,
+    stride_ob, stride_oq, stride_od,
+    stride_lb, stride_lq,
+    N_QUERIES, N_KEYS,
+    scale,
+    D: tl.constexpr,
+    Q_TILE_SIZE: tl.constexpr,
+    K_TILE_SIZE: tl.constexpr,
+):
+    # Program indices
+    query_tile_index = tl.program_id(0)
+    batch_index = tl.program_id(1)
+    
+    # Offset each pointer with the corresponding batch index
+    # multiplied with the batch stride for each tensor
+    Q_tile_ptr = tl.make_block_ptr(
+        Q_ptr + batch_index * stride_qb,
+        shape=(N_QUERIES, D),
+        strides=(stride_qq, stride_qd),
+        offsets=(query_tile_index * Q_TILE_SIZE, 0),
+        block_shape=(Q_TILE_SIZE, D),
+        order=(1, 0),
+    )
+
+    K_tile_ptr = tl.make_block_ptr(
+        K_ptr + batch_index * stride_kb,
+        shape=(N_KEYS, D),
+        strides=(stride_kk, stride_kd),
+        offsets=(0, 0),
+        block_shape=(K_TILE_SIZE, D),
+        order=(1, 0),
+    )
+
+    V_tile_ptr = tl.make_block_ptr(
+        V_ptr + batch_index * stride_vb,
+        shape=(N_KEYS, D),
+        strides=(stride_vk, stride_vd),
+        offsets=(0, 0),
+        block_shape=(K_TILE_SIZE, D),
+        order=(1, 0),
+    )
+
+    # same shape as Q
+    O_tile_ptr = tl.make_block_ptr(
+        O_ptr + batch_index * stride_ob,
+        shape=(N_QUERIES, D),
+        strides=(stride_oq, stride_od),
+        offsets=(query_tile_index * Q_TILE_SIZE, 0),
+        block_shape=(Q_TILE_SIZE, D),
+        order=(1, 0),
+    )
+
+    L_tile_ptr = tl.make_block_ptr(
+        L_ptr + batch_index * stride_lb,
+        shape=(N_QUERIES,),
+        strides=(stride_lq,),
+        offsets=(query_tile_index * Q_TILE_SIZE,),
+        block_shape=(Q_TILE_SIZE,),
+        order=(0,),
+    )
+
+    # Load Q_i from global memory 
+    Q = tl.load(Q_tile_ptr, boundary_check=(0, 1), padding_option="zero")
+
+    T_k = tl.cdiv(D, K_TILE_SIZE)
+
+    # Initialize a buffer to write to
+    O = tl.zeros((Q_TILE_SIZE, D), dtype=tl.float32)
+    l = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
+    m = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32) - float('inf') 
+
+    for j in range(1, T_k+1): 
+        # Load K_j, V_j from global memory 
+        K_j = tl.load(K_tile_ptr, boundary_check=(0, 1), padding_option="zero")
+        V_j = tl.load(V_tile_ptr, boundary_check=(0, 1), padding_option="zero")
+
+        S_ij = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
+        # print()
+        S_ij = tl.dot(Q, tl.trans(K_j), acc=S_ij)
+        S_ij *= scale
+
+        rowmax = tl.max(S_ij, axis=-1)
+
+        # rowmax = reduce(S_ij, "B_q B_k -> B_q", 'max') 
+        m_ij = tl.maximum(m[:], 
+                             rowmax) 
+        
+        # tl.device_assert(S_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE) )
+        # assert S_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE) 
+        # assert m_ij.shape == (Q_TILE_SIZE) 
+
+        P_ij = tl.exp(S_ij - tl.view(m_ij, (Q_TILE_SIZE, 1))) 
+        # assert P_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE)
+
+        l = tl.exp(m[:] - m_ij) * l[:] + tl.sum(P_ij, axis=-1)
+        # reduce(P_ij, "B_q B_k -> B_q", 'sum') 
+        # assert l.shape == (Q_TILE_SIZE) 
+        
+        # O = tl.dot(diag, O)
+        diag = tl.exp(m[:] - m_ij[:])
+        O = O * diag[:, None]
+        O += tl.dot(P_ij, V_j)
+
+        # O = einsum(
+        #     torch.diag_embed(torch.exp(m[:] - m_ij)), 
+        #     O[:, :], 
+        #     "B_q B_q, B_q d -> B_q d"
+        # )
+        # O += einsum(
+        #     P_ij, V_j, 
+        #     "batch B_q B_k, batch B_k d -> batch B_q d"
+        # )
+
+        # fill in 
+        # m = m_ij 
+
+        K_tile_ptr = K_tile_ptr.advance((K_TILE_SIZE,))
+        V_tile_ptr = V_tile_ptr.advance((K_TILE_SIZE,))
+
+    tl.store(O_tile_ptr, 
+             O / l[:, None],
+             boundary_check=(0,)
+    )
+
+    # tl.store(O_tile_ptr, 
+    #          einsum(
+    #              torch.linalg.inv(torch.diag_embed(l)), O, 
+    #              'B_q B_q, B_q d -> batch B_q d'
+    #          ), 
+    #          boundary_check=(0,))
+    
+    tl.store(L_tile_ptr,
+             m + tl.log(l),
+             boundary_check=(0,))    
+
+
+class FlashAttentionTriton(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, Q, K, V, is_causal=False):
+
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        Q.to(device)
+        K.to(device)
+        V.to(device)
+
+        Q_TILE_SIZE = 32
+        K_TILE_SIZE = 16
+
+        if len(Q.shape) == 2: Q = Q.unsqueeze(0)
+        if len(K.shape) == 2: K = K.unsqueeze(0)
+        if len(V.shape) == 2: V = V.unsqueeze(0)
+
+        # Q = rearrange(Q, "batch (T_q B_q) d -> T_q batch B_q d", B_q = Q_TILE_SIZE)
+        # K = rearrange(K, "batch (T_k B_k) d -> T_k batch B_k d", B_k = K_TILE_SIZE)
+        # V = rearrange(V, "batch (T_k B_k) d -> T_k batch B_k d", B_k = K_TILE_SIZE)
+
+        # Q: shape batch x D x D
+
+        batch_size = Q.shape[0]
+        D = Q.shape[-1]
+
+        # T_q = tl.cdiv(D, Q_TILE_SIZE)
+        # T_k = tl.cdiv(D, K_TILE_SIZE)
+
+        T_q = D // Q_TILE_SIZE
+        T_k = D // K_TILE_SIZE
+
+        # O = torch.empty((T_q, batch_size, Q_TILE_SIZE, D))
+        # L = torch.empty((T_q, batch_size, Q_TILE_SIZE))
+
+        O = torch.empty((batch_size, D, D))
+        L = torch.empty((batch_size, D))
+
+        # launch grid: (T_q, batch_size)
+
+        flash_fwd_kernel[(T_q, batch_size)](
+            Q, K, V, 
+            O, L,
+            Q.stride(0), Q.stride(1), Q.stride(2),
+            K.stride(0), K.stride(1), K.stride(2),
+            V.stride(0), V.stride(1), V.stride(2),
+            O.stride(0), O.stride(1), O.stride(2),
+            L.stride(0), L.stride(1), 
+            T_q, T_k, 
+            scale=1/np.sqrt(D),
+            D=D,
+            Q_TILE_SIZE=Q_TILE_SIZE, K_TILE_SIZE=K_TILE_SIZE
+        )
+                
+        # reshape O, L
+        # O = rearrange(O, 'T_q batch B_q d -> batch (T_q B_q) d')
+        # L = rearrange(L, 'T_q batch B_q -> batch (T_q B_q)')
+
+        # might need to reshape O, L
+        
+        ctx.save_for_backward(L)
+        return O #, L

@@ -113,16 +113,16 @@ class FlashAttentionTorch(torch.autograd.Function):
         return ctx.compiled_backward(Q, K, V, O, dO, L)
 
 
-@triton.jit
-def fill_diagonal(
-    diag,            # the diagonal matrix (Triton tensor)
-    values,          # values to fill the diagonal with (Triton tensor)
-    N,               # size of the square matrix
-):
-    # Iterate over the diagonal
-    for i in range(N):
-        # Set the value on the diagonal
-        diag[i, i] = values[i]
+# @triton.jit
+# def fill_diagonal(
+#     diag,            # the diagonal matrix (Triton tensor)
+#     values,          # values to fill the diagonal with (Triton tensor)
+#     N,               # size of the square matrix
+# ):
+#     # Iterate over the diagonal
+#     for i in range(N):
+#         # Set the value on the diagonal
+#         diag[i, i] = values[i]
 
 @triton.jit
 def flash_fwd_kernel(
@@ -213,13 +213,8 @@ def flash_fwd_kernel(
 
         rowmax = tl.max(S_ij, axis=-1)
 
-        # rowmax = reduce(S_ij, "B_q B_k -> B_q", 'max') 
         m_ij = tl.maximum(m[:], 
                              rowmax) 
-        
-        # tl.device_assert(S_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE) )
-        # assert S_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE) 
-        # assert m_ij.shape == (Q_TILE_SIZE) 
 
         P_ij = tl.exp(S_ij - tl.view(m_ij, (Q_TILE_SIZE, 1))) 
         # assert P_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE)
@@ -233,19 +228,6 @@ def flash_fwd_kernel(
         O = O * diag[:, None]
         O += tl.dot(P_ij, V_j)
 
-        # O = einsum(
-        #     torch.diag_embed(torch.exp(m[:] - m_ij)), 
-        #     O[:, :], 
-        #     "B_q B_q, B_q d -> B_q d"
-        # )
-        # O += einsum(
-        #     P_ij, V_j, 
-        #     "batch B_q B_k, batch B_k d -> batch B_q d"
-        # )
-
-        # fill in 
-        # m = m_ij 
-
         K_tile_ptr = K_tile_ptr.advance((K_TILE_SIZE,))
         V_tile_ptr = V_tile_ptr.advance((K_TILE_SIZE,))
 
@@ -253,13 +235,6 @@ def flash_fwd_kernel(
              O / l[:, None],
              boundary_check=(0,)
     )
-
-    # tl.store(O_tile_ptr, 
-    #          einsum(
-    #              torch.linalg.inv(torch.diag_embed(l)), O, 
-    #              'B_q B_q, B_q d -> batch B_q d'
-    #          ), 
-    #          boundary_check=(0,))
     
     tl.store(L_tile_ptr,
              m + tl.log(l),
@@ -283,12 +258,6 @@ class FlashAttentionTriton(torch.autograd.Function):
         if len(K.shape) == 2: K = K.unsqueeze(0)
         if len(V.shape) == 2: V = V.unsqueeze(0)
 
-        # Q = rearrange(Q, "batch (T_q B_q) d -> T_q batch B_q d", B_q = Q_TILE_SIZE)
-        # K = rearrange(K, "batch (T_k B_k) d -> T_k batch B_k d", B_k = K_TILE_SIZE)
-        # V = rearrange(V, "batch (T_k B_k) d -> T_k batch B_k d", B_k = K_TILE_SIZE)
-
-        # Q: shape batch x D x D
-
         batch_size = Q.shape[0]
         D = Q.shape[-1]
 
@@ -306,19 +275,19 @@ class FlashAttentionTriton(torch.autograd.Function):
 
         # launch grid: (T_q, batch_size)
 
-        flash_fwd_kernel[(T_q, batch_size)](
-            Q, K, V, 
-            O, L,
-            Q.stride(0), Q.stride(1), Q.stride(2),
-            K.stride(0), K.stride(1), K.stride(2),
-            V.stride(0), V.stride(1), V.stride(2),
-            O.stride(0), O.stride(1), O.stride(2),
-            L.stride(0), L.stride(1), 
-            T_q, T_k, 
-            scale=1/np.sqrt(D),
-            D=D,
-            Q_TILE_SIZE=Q_TILE_SIZE, K_TILE_SIZE=K_TILE_SIZE
-        )
+        # flash_fwd_kernel[(T_q, batch_size)](
+        #     Q, K, V, 
+        #     O, L,
+        #     Q.stride(0), Q.stride(1), Q.stride(2),
+        #     K.stride(0), K.stride(1), K.stride(2),
+        #     V.stride(0), V.stride(1), V.stride(2),
+        #     O.stride(0), O.stride(1), O.stride(2),
+        #     L.stride(0), L.stride(1), 
+        #     T_q, T_k, 
+        #     scale=1/np.sqrt(D),
+        #     D=D,
+        #     Q_TILE_SIZE=Q_TILE_SIZE, K_TILE_SIZE=K_TILE_SIZE
+        # )
                 
         # reshape O, L
         # O = rearrange(O, 'T_q batch B_q d -> batch (T_q B_q) d')

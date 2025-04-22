@@ -201,35 +201,35 @@ def flash_fwd_kernel(
     l = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
     m = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32) - float('inf') 
 
-    for j in range(1, T_k+1): 
-        # Load K_j, V_j from global memory 
-        K_j = tl.load(K_tile_ptr, boundary_check=(0, 1), padding_option="zero")
-        V_j = tl.load(V_tile_ptr, boundary_check=(0, 1), padding_option="zero")
+    # for j in range(1, T_k+1): 
+    #     # Load K_j, V_j from global memory 
+    #     K_j = tl.load(K_tile_ptr, boundary_check=(0, 1), padding_option="zero")
+    #     V_j = tl.load(V_tile_ptr, boundary_check=(0, 1), padding_option="zero")
 
-        S_ij = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
-        # print()
-        S_ij = tl.dot(Q, tl.trans(K_j), acc=S_ij)
-        S_ij *= scale
+    #     S_ij = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
+    #     # print()
+    #     S_ij = tl.dot(Q, tl.trans(K_j), acc=S_ij)
+    #     S_ij *= scale
 
-        rowmax = tl.max(S_ij, axis=-1)
+    #     rowmax = tl.max(S_ij, axis=-1)
 
-        m_ij = tl.maximum(m[:], 
-                             rowmax) 
+    #     m_ij = tl.maximum(m[:], 
+    #                          rowmax) 
 
-        P_ij = tl.exp(S_ij - tl.view(m_ij, (Q_TILE_SIZE, 1))) 
-        # assert P_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE)
+    #     P_ij = tl.exp(S_ij - tl.view(m_ij, (Q_TILE_SIZE, 1))) 
+    #     # assert P_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE)
 
-        l = tl.exp(m[:] - m_ij) * l[:] + tl.sum(P_ij, axis=-1)
-        # reduce(P_ij, "B_q B_k -> B_q", 'sum') 
-        # assert l.shape == (Q_TILE_SIZE) 
+    #     l = tl.exp(m[:] - m_ij) * l[:] + tl.sum(P_ij, axis=-1)
+    #     # reduce(P_ij, "B_q B_k -> B_q", 'sum') 
+    #     # assert l.shape == (Q_TILE_SIZE) 
         
-        # O = tl.dot(diag, O)
-        diag = tl.exp(m[:] - m_ij[:])
-        O = O * diag[:, None]
-        O += tl.dot(P_ij, V_j)
+    #     # O = tl.dot(diag, O)
+    #     diag = tl.exp(m[:] - m_ij[:])
+    #     O = O * diag[:, None]
+    #     O += tl.dot(P_ij, V_j)
 
-        K_tile_ptr = K_tile_ptr.advance((K_TILE_SIZE,))
-        V_tile_ptr = V_tile_ptr.advance((K_TILE_SIZE,))
+    #     K_tile_ptr = K_tile_ptr.advance((K_TILE_SIZE,))
+    #     V_tile_ptr = V_tile_ptr.advance((K_TILE_SIZE,))
 
     tl.store(O_tile_ptr, 
              O / l[:, None],

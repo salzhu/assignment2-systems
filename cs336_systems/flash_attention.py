@@ -259,7 +259,7 @@ class FlashAttentionTriton(torch.autograd.Function):
         if len(V.shape) == 2: V = V.unsqueeze(0)
 
         batch_size = Q.shape[0]
-        D = Q.shape[-1]
+        D = Q.shape[1]
 
         # T_q = tl.cdiv(D, Q_TILE_SIZE)
         # T_k = tl.cdiv(D, K_TILE_SIZE)
@@ -297,6 +297,8 @@ class FlashAttentionTriton(torch.autograd.Function):
 
         O = torch.zeros((batch_size, D, D))
         L = torch.zeros((batch_size, D))
+
+        print(L.shape)
         
         ctx.save_for_backward(L)
         return O #, L

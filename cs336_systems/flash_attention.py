@@ -198,7 +198,9 @@ def flash_fwd_kernel(
 
     # Initialize a buffer to write to
     O = tl.zeros((Q_TILE_SIZE, D), dtype=tl.float32)
+    O2 = tl.zeros((Q_TILE_SIZE, D), dtype=tl.float32)
     l = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
+    l2 = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
     m = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32) - float('inf') 
 
     for j in range(1, T_k+1): 

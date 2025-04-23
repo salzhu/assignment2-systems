@@ -209,9 +209,9 @@ def flash_fwd_kernel(
         K_j = tl.load(K_tile_ptr)
         V_j = tl.load(V_tile_ptr)
 
-        # S_ij = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
+        S_ij = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
         # print()
-        S_ij = tl.dot(Q, tl.trans(K_j))
+        S_ij = tl.dot(Q, tl.trans(K_j), acc=S_ij)
         S_ij *= scale
 
         rowmax = tl.max(S_ij, axis=-1)
@@ -233,18 +233,16 @@ def flash_fwd_kernel(
         m = m_ij 
 
     # tl.device_print("m", m)
-    tl.device_print("S_ij", S_ij)
     tl.device_print("rowmax", rowmax)
     tl.device_print("m", m)
+
+    O = O / l[:, None]
     
     tl.store(O_tile_ptr, 
-             O / l[:, None],
-             boundary_check=(0,)
-    )
+             O)
     
     tl.store(L_tile_ptr,
-             m + tl.log(l),
-             boundary_check=(0,))    
+             m + tl.log(l))    
 
 
 class FlashAttentionTriton(torch.autograd.Function):

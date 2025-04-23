@@ -192,7 +192,7 @@ def flash_fwd_kernel(
     )
 
     # Load Q_i from global memory 
-    Q = tl.load(Q_tile_ptr, boundary_check=(0, 1), padding_option="zero")
+    Q = tl.load(Q_tile_ptr)
 
     T_k = tl.cdiv(D, K_TILE_SIZE)
 
@@ -205,8 +205,8 @@ def flash_fwd_kernel(
 
     for j in range(1, T_k+1): 
         # Load K_j, V_j from global memory 
-        K_j = tl.load(K_tile_ptr, boundary_check=(0, 1), padding_option="zero")
-        V_j = tl.load(V_tile_ptr, boundary_check=(0, 1), padding_option="zero")
+        K_j = tl.load(K_tile_ptr)
+        V_j = tl.load(V_tile_ptr)
 
         # S_ij = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
         # print()

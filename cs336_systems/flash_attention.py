@@ -221,7 +221,7 @@ def flash_fwd_kernel(
 
         P_ij = tl.exp(S_ij - tl.view(m_ij, (Q_TILE_SIZE, 1))) 
 
-        l2 = tl.exp(m - m_ij) * l + tl.sum(P_ij, axis=-1)
+        l = tl.exp(m - m_ij) * l + tl.sum(P_ij, axis=-1)
         
         diag = tl.exp(m - m_ij)
         O2 = O * diag[:, None]
@@ -232,7 +232,7 @@ def flash_fwd_kernel(
 
         m = m_ij 
         O = O2 
-        l = l2
+        # l = l2
 
     # tl.device_print("m", m)
     tl.device_print("S_ij", S_ij)

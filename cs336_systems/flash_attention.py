@@ -267,7 +267,6 @@ class FlashAttentionTriton(torch.autograd.Function):
 
         D1 = Q.shape[1]
         D2 = Q.shape[2]
-        print(Q.shape)
 
         T_q = D1 // Q_TILE_SIZE
         T_k = D2 // K_TILE_SIZE
@@ -286,13 +285,21 @@ class FlashAttentionTriton(torch.autograd.Function):
             O.stride(0), O.stride(1), O.stride(2),
             L.stride(0), L.stride(1), 
             T_q, T_k, 
-            scale=1/np.sqrt(D2),
+            scale=1/np.sqrt(D),
             D=D,
             Q_TILE_SIZE=Q_TILE_SIZE, K_TILE_SIZE=K_TILE_SIZE
         )
+                
+        # reshape O, L
+        # O = rearrange(O, 'T_q batch B_q d -> batch (T_q B_q) d')
+        # L = rearrange(L, 'T_q batch B_q -> batch (T_q B_q)')
+
+        # might need to reshape O, L
+
+        # O = torch.zeros((batch_size, D1, D2)).to(device)
+        # L = torch.zeros((batch_size, D1)).to(device)
 
         print(L.shape)
-        print(Q.shape)
         
         ctx.save_for_backward(L)
         return O #, L

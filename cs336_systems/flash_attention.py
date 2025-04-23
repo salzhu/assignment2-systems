@@ -64,6 +64,19 @@ class FlashAttentionTorch(torch.autograd.Function):
                 V_j = V[j-1] 
 
                 S_ij = einsum(Q_i, K_j, "batch B_q d, batch B_k d -> batch B_q B_k") / np.sqrt(d) 
+
+                if is_causal:
+                    # mask is B_q x B_k of 0 1 1 1... 0 0 1 1 ... 
+                    # query offset is query_tile_index * Q_TILE_SIZE 
+                    # key offset is (j - 1) * K_TILE_SIZE
+                    # mask[s][t] = 1 if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE
+                    mask = torch.zeros((B_q, B_k), dtype=torch.float32)
+                    for s in range(B_q):
+                        for t in range(B_k):
+                            if s + i * B_q < t + (j - 1) * B_k: 
+                                mask[s,t] = 1
+                    S_ij = S_ij + torch.where(mask, 0, -1.0e6)
+
                 rowmax = reduce(S_ij, "batch B_q B_k -> batch B_q", 'max') 
                 m_ij = torch.maximum(m_i[:, :], rowmax) 
                 assert S_ij.shape == (batch, B_q, B_k) 
@@ -321,8 +334,7 @@ class FlashAttentionTriton(torch.autograd.Function):
 
         # O = torch.zeros((batch_size, D1, D2)).to(device)
         # L = torch.zeros((batch_size, D1)).to(device)
-
-        print(L.shape)
         
         ctx.save_for_backward(L)
+        ctx.is_causal = is_causal
         return O #, L

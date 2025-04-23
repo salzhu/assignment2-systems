@@ -230,6 +230,8 @@ def flash_fwd_kernel(
         K_tile_ptr = K_tile_ptr.advance((0,K_TILE_SIZE))
         V_tile_ptr = V_tile_ptr.advance((0,K_TILE_SIZE))
 
+        m = m_ij 
+
     # tl.device_print("m", m)
     tl.device_print("S_ij", S_ij)
     tl.device_print("rowmax", rowmax)

@@ -214,18 +214,18 @@ def flash_fwd_kernel(
         S_ij = tl.dot(Q, tl.trans(K_j), acc=S_ij)
         S_ij *= scale
 
-        rowmax = tl.max(S_ij, axis=-1)
+        rowmax = tl.max(S_ij, axis=-1) # 1?
 
         m_ij = tl.maximum(m, rowmax) 
 
         P_ij = tl.exp(S_ij - m_ij[:, None]) 
 
-        l = tl.exp(m - m_ij) * l + tl.sum(P_ij, axis=-1)
+        l = l * tl.exp(m - m_ij) + tl.sum(P_ij, axis=-1) # 1
         
         diag = tl.exp(m - m_ij)
         O = O * diag[:, None]
-        P_ij.to(V_j.dtype)
-        tl.dot(P_ij, V_j, acc=O)
+        P_ij = P_ij.to(V_j.dtype)
+        O = tl.dot(P_ij, V_j, acc=O)
 
         K_tile_ptr = K_tile_ptr.advance((K_TILE_SIZE,0))
         V_tile_ptr = V_tile_ptr.advance((K_TILE_SIZE,0))

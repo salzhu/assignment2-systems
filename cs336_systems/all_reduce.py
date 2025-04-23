@@ -13,13 +13,12 @@ def setup(rank, world_size):
 
 def all_reduce_time(rank, data, world_size):
     setup(rank, world_size)
-    
-    # print(f"rank {rank} data (before all-reduce): {data}")
-    
+        
     dist.all_reduce(data, async_op=False)
-    # print(f"rank {rank} data (after all-reduce): {data}")
+    torch.cuda.synchronize()
 
 if __name__ == "__main__":
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     df = {'num. processes': [], 'data size': [], 'time (ms)': []}
 
@@ -34,11 +33,13 @@ if __name__ == "__main__":
     for world_size in world_sizes: 
         for shape in shapes: 
 
-            data = torch.rand((shape[0],shape[1]), dtype=torch.float32)
+            data = torch.rand((shape[0],shape[1]), dtype=torch.float32,device=device)
 
             start = timeit.default_timer()
             mp.spawn(fn=all_reduce_time, args=(data, world_size, ), nprocs=world_size, join=True)
             time = timeit.default_timer() - start
+
+            mp.spawn(fn=all_reduce_time, args=(time, world_size, ), nprocs=world_size, join=True)
             
             df['num. processes'].append(world_size)
             df['data size'].append(shape[2])

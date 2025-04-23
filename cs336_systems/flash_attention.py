@@ -285,7 +285,7 @@ class FlashAttentionTriton(torch.autograd.Function):
             O.stride(0), O.stride(1), O.stride(2),
             L.stride(0), L.stride(1), 
             T_q, T_k, 
-            scale=1/np.sqrt(D),
+            scale=1/np.sqrt(D2),
             D=D,
             Q_TILE_SIZE=Q_TILE_SIZE, K_TILE_SIZE=K_TILE_SIZE
         )

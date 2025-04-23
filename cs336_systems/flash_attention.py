@@ -226,8 +226,8 @@ def flash_fwd_kernel(
         P_ij.to(V_j.dtype)
         tl.dot(P_ij, V_j, acc=O)
 
-        K_tile_ptr = K_tile_ptr.advance((0,K_TILE_SIZE))
-        V_tile_ptr = V_tile_ptr.advance((0,K_TILE_SIZE))
+        K_tile_ptr = K_tile_ptr.advance((K_TILE_SIZE,0))
+        V_tile_ptr = V_tile_ptr.advance((K_TILE_SIZE,0))
 
         m = m_ij 
 

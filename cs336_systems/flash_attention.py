@@ -128,6 +128,9 @@ class FlashAttentionTorch(torch.autograd.Function):
             L[i, :, :] = m_i[:, :] + torch.log(l_i[:, :])
                 
         # reshape O, L
+        Q = rearrange(Q, 'T_q batch B_q d -> batch (T_q B_q) d')
+        K = rearrange(K, 'T_k batch B_k d -> batch (T_k B_k) d')
+        V = rearrange(V, 'T_k batch B_k d -> batch (T_k B_k) d')
         O = rearrange(O, 'T_q batch B_q d -> batch (T_q B_q) d')
         L = rearrange(L, 'T_q batch B_q -> batch (T_q B_q)')
         

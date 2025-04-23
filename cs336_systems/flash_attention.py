@@ -220,7 +220,7 @@ def flash_fwd_kernel(
             # query offset is query_tile_index * Q_TILE_SIZE 
             # key offset is (j - 1) * K_TILE_SIZE
             # mask[s][t] = 1 if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE
-            mask = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
+            mask = torch.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=torch.float32)
             for s in range(Q_TILE_SIZE):
                 for t in range(K_TILE_SIZE):
                     if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE: 

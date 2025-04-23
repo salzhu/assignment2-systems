@@ -199,8 +199,8 @@ def flash_fwd_kernel(
     # Initialize a buffer to write to
     O = tl.zeros((Q_TILE_SIZE, D), dtype=tl.float32)
     O2 = tl.zeros((Q_TILE_SIZE, D), dtype=tl.float32)
-    l = 1 + tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
-    l2 = 1 + tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
+    l = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
+    l2 = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
     m = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32) - float('inf') 
 
     for j in range(1, T_k+1): 
@@ -215,14 +215,15 @@ def flash_fwd_kernel(
 
         rowmax = tl.max(S_ij, axis=-1)
 
-        m_ij = tl.maximum(m, 
-                             rowmax) 
+        m_ij = tl.maximum(m, rowmax) 
 
         P_ij = tl.exp(S_ij - tl.view(m_ij, (Q_TILE_SIZE, 1))) 
         # assert P_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE)
 
+        tl.device_print(m.shape, m_ij.shape)
+
         # l2 = tl.exp(m - m_ij) * l #+ tl.sum(P_ij, axis=-1) # bad line
-        l2 = tl.exp(m - m_ij)
+        l2 = tl.exp(m - m_ij) * l
         l2 = tl.sum(P_ij, axis=-1)
         
         # O = tl.dot(diag, O)

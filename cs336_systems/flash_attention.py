@@ -194,7 +194,8 @@ def flash_fwd_kernel(
     # Load Q_i from global memory 
     Q = tl.load(Q_tile_ptr)
 
-    T_k = tl.cdiv(N_KEYS, K_TILE_SIZE)
+    # T_k = tl.cdiv(N_KEYS, K_TILE_SIZE)
+    T_k = N_KEYS
 
     # Initialize a buffer to write to
     O = tl.zeros((Q_TILE_SIZE, D), dtype=tl.float32)

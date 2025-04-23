@@ -221,7 +221,7 @@ def flash_fwd_kernel(
         # assert P_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE)
 
         tl.device_print("m_ij", m_ij)
-        tl.device_print("l", m_ij)
+        tl.device_print("l", l)
 
         # l2 = tl.exp(m - m_ij) * l #+ tl.sum(P_ij, axis=-1) # bad line
         l2 = tl.exp(m - m_ij) * l

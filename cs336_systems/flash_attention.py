@@ -224,14 +224,14 @@ def flash_fwd_kernel(
         l = tl.exp(m - m_ij) * l + tl.sum(P_ij, axis=-1)
         
         diag = tl.exp(m - m_ij)
-        O2 = O * diag[:, None]
-        O2 = tl.dot(P_ij, V_j, acc=O2)
+        O = O * diag[:, None]
+        O = tl.dot(P_ij, V_j, acc=O)
 
         K_tile_ptr = K_tile_ptr.advance((0,K_TILE_SIZE))
         V_tile_ptr = V_tile_ptr.advance((0,K_TILE_SIZE))
 
         m = m_ij 
-        O = O2 
+        # O = O2 
         # l = l2
 
     # tl.device_print("m", m)

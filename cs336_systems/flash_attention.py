@@ -215,13 +215,13 @@ def flash_fwd_kernel(
 
         rowmax = tl.max(S_ij, axis=-1)
 
-        m_ij = tl.maximum(m[:], 
+        m_ij = tl.maximum(m, 
                              rowmax) 
 
         P_ij = tl.exp(S_ij - tl.view(m_ij, (Q_TILE_SIZE, 1))) 
         # assert P_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE)
 
-        l2 = tl.exp(m[:] - m_ij) * l[:] + tl.sum(P_ij, axis=-1) # bad line
+        l2 = tl.exp(m - m_ij) * l + tl.sum(P_ij, axis=-1) # bad line
         # l2 = tl.sum(P_ij, axis=-1)
         
         # O = tl.dot(diag, O)

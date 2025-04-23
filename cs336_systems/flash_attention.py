@@ -263,22 +263,25 @@ class FlashAttentionTriton(torch.autograd.Function):
         if len(V.shape) == 2: V = V.unsqueeze(0)
 
         batch_size = Q.shape[0]
-        D = Q.shape[1]
+        
+        N_QUERIES = Q.shape[-2]
+        N_KEYS = K.shape[-2]
+        D = Q.shape[-1]
 
-        D1 = Q.shape[1]
-        D2 = Q.shape[2]
+        # D1 = Q.shape[1]
+        # D2 = Q.shape[2]
 
         # T_q = tl.cdiv(D1, Q_TILE_SIZE)
         # T_k = tl.cdiv(D2, K_TILE_SIZE)
 
-        # T_q = D // Q_TILE_SIZE
-        # T_k = D // K_TILE_SIZE
+        T_q = D // Q_TILE_SIZE
+        T_k = D // K_TILE_SIZE
 
-        T_q = D2 // Q_TILE_SIZE
-        T_k = D2 // K_TILE_SIZE
+        # T_q = D2 // Q_TILE_SIZE
+        # T_k = D2 // K_TILE_SIZE
 
-        O = torch.empty((batch_size, D2, D2), dtype=torch.float32).to(device)
-        L = torch.empty((batch_size, D2), dtype=torch.float32).to(device)
+        O = torch.empty((batch_size, D, D), dtype=torch.float32).to(device)
+        L = torch.empty((batch_size, D), dtype=torch.float32).to(device)
 
         # launch grid: (T_q, batch_size)
 
@@ -290,9 +293,9 @@ class FlashAttentionTriton(torch.autograd.Function):
             V.stride(0), V.stride(1), V.stride(2),
             O.stride(0), O.stride(1), O.stride(2),
             L.stride(0), L.stride(1), 
-            T_q, T_k, 
-            scale=1/np.sqrt(D2),
-            D=D2,
+            N_QUERIES, N_KEYS, 
+            scale=1/np.sqrt(D),
+            D=D,
             Q_TILE_SIZE=Q_TILE_SIZE, K_TILE_SIZE=K_TILE_SIZE
         )
                 

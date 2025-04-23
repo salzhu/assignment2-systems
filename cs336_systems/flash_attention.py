@@ -223,6 +223,7 @@ def flash_fwd_kernel(
         
         diag = tl.exp(m - m_ij)
         O = O * diag[:, None]
+        P_ij.to(V_j.dtype)
         tl.dot(P_ij, V_j, acc=O)
 
         K_tile_ptr = K_tile_ptr.advance((0,K_TILE_SIZE))

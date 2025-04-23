@@ -218,7 +218,7 @@ def flash_fwd_kernel(
 
         m_ij = tl.maximum(m, rowmax) 
 
-        P_ij = tl.exp(S_ij - tl.view(m_ij, (Q_TILE_SIZE, 1))) 
+        P_ij = tl.exp(S_ij - m_ij[:, None]) 
 
         l = tl.exp(m - m_ij) * l + tl.sum(P_ij, axis=-1)
         

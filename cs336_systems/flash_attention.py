@@ -28,7 +28,7 @@ def manual_backward(Q, K, V, O, dO, L):
     # dV = einsum(P, dO, "batch B_q B_k, batch B_q d -> batch B_k d")
     # dP = einsum(dO, V, "batch B_k d, b")
     
-    return dQ, dK, dV
+    return dQ, dK, dV, dO
 
 class FlashAttentionTorch(torch.autograd.Function):
     

@@ -65,17 +65,17 @@ class FlashAttentionTorch(torch.autograd.Function):
 
                 S_ij = einsum(Q_i, K_j, "batch B_q d, batch B_k d -> batch B_q B_k") / np.sqrt(d) 
 
-                if is_causal:
-                    # mask is B_q x B_k of 0 1 1 1... 0 0 1 1 ... 
-                    # query offset is query_tile_index * Q_TILE_SIZE 
-                    # key offset is (j - 1) * K_TILE_SIZE
-                    # mask[s][t] = 1 if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE
-                    mask = torch.zeros((B_q, B_k), dtype=torch.float32)
-                    for s in range(B_q):
-                        for t in range(B_k):
-                            if s + i * B_q < t + (j - 1) * B_k: 
-                                mask[s,t] = 1
-                    S_ij = S_ij + torch.where(mask, 0, -1.0e6)
+                # if is_causal:
+                #     # mask is B_q x B_k of 0 1 1 1... 0 0 1 1 ... 
+                #     # query offset is query_tile_index * Q_TILE_SIZE 
+                #     # key offset is (j - 1) * K_TILE_SIZE
+                #     # mask[s][t] = 1 if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE
+                #     mask = torch.zeros((B_q, B_k), dtype=torch.float32)
+                #     for s in range(B_q):
+                #         for t in range(B_k):
+                #             if s + i * B_q < t + (j - 1) * B_k: 
+                #                 mask[s,t] = 1
+                #     S_ij = S_ij + torch.where(mask, 0, -1.0e6)
 
                 rowmax = reduce(S_ij, "batch B_q B_k -> batch B_q", 'max') 
                 m_ij = torch.maximum(m_i[:, :], rowmax) 
@@ -233,12 +233,21 @@ def flash_fwd_kernel(
             # query offset is query_tile_index * Q_TILE_SIZE 
             # key offset is (j - 1) * K_TILE_SIZE
             # mask[s][t] = 1 if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE
-            mask = torch.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=torch.float32)
-            for s in range(Q_TILE_SIZE):
-                for t in range(K_TILE_SIZE):
-                    if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE: 
-                        mask[s,t] = 1
+
+            mask = (query_tile_index * Q_TILE_SIZE + tl.arange(Q_TILE_SIZE))[:, None] >= ((j-1) * K_TILE_SIZE + tl.arange(K_TILE_SIZE))[None, :]
+
+            # mask = torch.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=torch.float32)
+            # for s in range(Q_TILE_SIZE):
+            #     for t in range(K_TILE_SIZE):
+            #         if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE: 
+            #             mask[s,t] = 1
             S_ij = S_ij + tl.where(mask, 0, -1.0e6)
+
+            # S = torch.where(
+            #     torch.arange(n_queries, device=S.device)[None, :, None] >= torch.arange(n_keys, device=S.device)[None, None, :],
+            #     S,
+            #     -1e6
+            # )
 
         rowmax = tl.max(S_ij, axis=-1) # 1?
 

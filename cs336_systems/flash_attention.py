@@ -9,12 +9,15 @@ import triton
 import triton.language as tl
 
 
-def manual_backward(Q, K, V, O, dO, L):
+def manual_backward(Q, K, V, O, dO, L, is_causal):
 
     d = Q.shape[-1]
 
     D = torch.sum(O * dO, dim=-1)
     S = einsum(Q, K, "batch T_q d, batch T_k d -> batch T_q T_k") / np.sqrt(d) 
+
+    mask = torch.triu(torch.ones(S.shape), diagonal=1)
+    S = S + torch.where(mask, -1.0e6, 0) # 1 = masked 0 1 1 1 // 0 0 1 1 1
 
     P = torch.exp(S - L[:,:,None]) 
     dV = einsum(P, dO, "batch T_q T_k, batch T_q d -> batch T_k d") 
@@ -135,12 +138,13 @@ class FlashAttentionTorch(torch.autograd.Function):
         L = rearrange(L, 'T_q batch B_q -> batch (T_q B_q)')
         
         ctx.save_for_backward(Q, K, V, O, L)
+        ctx.is_causal = is_causal
         return O #, L
     
     @staticmethod
     def backward(ctx, dO):
         Q, K, V, O, L = ctx.saved_tensors
-        return compiled_backward(Q, K, V, O, dO, L)
+        return compiled_backward(Q, K, V, O, dO, L, ctx.is_causal)
 
 
 # @triton.jit
@@ -363,4 +367,4 @@ class FlashAttentionTriton(torch.autograd.Function):
     @staticmethod
     def backward(ctx, dO):
         Q, K, V, O, L = ctx.saved_tensors
-        return compiled_backward(Q, K, V, O, dO, L)
+        return compiled_backward(Q, K, V, O, dO, L, ctx.is_causal)

@@ -14,7 +14,7 @@ def manual_backward(Q, K, V, O, dO, L):
     d = Q.shape[-1]
 
     D = torch.sum(O * dO, dim=-1)
-    S = torch.bmm(Q, K.T) / np.sqrt(d)
+    S = torch.bmm(Q, K.transpose(1,2)) / np.sqrt(d)
     # S = einsum(Q, K, "batch B_q d, batch B_k d -> batch B_q B_k") / np.sqrt(d) 
 
     P = torch.exp(S - L) 

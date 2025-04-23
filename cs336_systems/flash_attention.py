@@ -234,7 +234,7 @@ def flash_fwd_kernel(
             # key offset is (j - 1) * K_TILE_SIZE
             # mask[s][t] = 1 if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE
 
-            mask = (query_tile_index * Q_TILE_SIZE + tl.arange(Q_TILE_SIZE))[:, None] >= ((j-1) * K_TILE_SIZE + tl.arange(K_TILE_SIZE))[None, :]
+            mask = (query_tile_index * Q_TILE_SIZE + tl.arange(0,Q_TILE_SIZE))[:, None] >= ((j-1) * K_TILE_SIZE + tl.arange(0,K_TILE_SIZE))[None, :]
 
             # mask = torch.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=torch.float32)
             # for s in range(Q_TILE_SIZE):

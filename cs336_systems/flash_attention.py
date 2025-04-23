@@ -228,7 +228,7 @@ def flash_fwd_kernel(
         K_tile_ptr = K_tile_ptr.advance((0,K_TILE_SIZE))
         V_tile_ptr = V_tile_ptr.advance((0,K_TILE_SIZE))
 
-    tl.device_print("l2", l2)
+    tl.device_print("m", m)
     
     tl.store(O_tile_ptr, 
              O2 / l2[:, None],

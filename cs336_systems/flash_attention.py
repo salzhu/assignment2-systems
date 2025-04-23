@@ -243,12 +243,6 @@ def flash_fwd_kernel(
             #             mask[s,t] = 1
             S_ij = S_ij + tl.where(mask, 0, -1.0e6)
 
-            # S = torch.where(
-            #     torch.arange(n_queries, device=S.device)[None, :, None] >= torch.arange(n_keys, device=S.device)[None, None, :],
-            #     S,
-            #     -1e6
-            # )
-
         rowmax = tl.max(S_ij, axis=-1) # 1?
 
         m_ij = tl.maximum(m, rowmax) 

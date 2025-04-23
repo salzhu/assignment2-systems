@@ -16,8 +16,9 @@ def manual_backward(Q, K, V, O, dO, L, is_causal):
     D = torch.sum(O * dO, dim=-1)
     S = einsum(Q, K, "batch T_q d, batch T_k d -> batch T_q T_k") / np.sqrt(d) 
 
-    mask = torch.triu(torch.ones(S.shape), diagonal=1)
-    S = S + torch.where(mask, -1.0e6, 0) # 1 = masked 0 1 1 1 // 0 0 1 1 1
+    if is_causal:
+        mask = torch.triu(torch.ones(S.shape), diagonal=1)
+        S = S + torch.where(mask[None,:,:], -1.0e6, 0) # 1 = masked 0 1 1 1 // 0 0 1 1 1
 
     P = torch.exp(S - L[:,:,None]) 
     dV = einsum(P, dO, "batch T_q T_k, batch T_q d -> batch T_k d") 

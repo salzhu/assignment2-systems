@@ -268,17 +268,14 @@ class FlashAttentionTriton(torch.autograd.Function):
         D1 = Q.shape[1]
         D2 = Q.shape[2]
 
-        # T_q = tl.cdiv(D, Q_TILE_SIZE)
-        # T_k = tl.cdiv(D, K_TILE_SIZE)
+        T_q = tl.cdiv(D1, Q_TILE_SIZE)
+        T_k = tl.cdiv(D2, K_TILE_SIZE)
 
-        T_q = D // Q_TILE_SIZE
-        T_k = D // K_TILE_SIZE
+        # T_q = D // Q_TILE_SIZE
+        # T_k = D // K_TILE_SIZE
 
-        T_q = D1 // Q_TILE_SIZE
-        T_k = D2 // K_TILE_SIZE
-
-        # O = torch.empty((T_q, batch_size, Q_TILE_SIZE, D))
-        # L = torch.empty((T_q, batch_size, Q_TILE_SIZE))
+        # T_q = D1 // Q_TILE_SIZE
+        # T_k = D2 // K_TILE_SIZE
 
         O = torch.empty((batch_size, D1, D2)).to(device)
         L = torch.empty((batch_size, D1)).to(device)

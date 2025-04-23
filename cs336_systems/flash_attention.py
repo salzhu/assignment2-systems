@@ -212,7 +212,7 @@ def flash_fwd_kernel(
 
         # S_ij = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
         # print()
-        S_ij = tl.dot(Q, tl.trans(K_j))
+        S_ij = tl.dot(Q, tl.trans(K_j), acc=S_ij)
         S_ij *= scale
 
         rowmax = tl.max(S_ij, axis=-1)
@@ -231,6 +231,8 @@ def flash_fwd_kernel(
         V_tile_ptr = V_tile_ptr.advance((0,K_TILE_SIZE))
 
         m = m_ij 
+        O = O2 
+        l = l2
 
     # tl.device_print("m", m)
     tl.device_print("S_ij", S_ij)

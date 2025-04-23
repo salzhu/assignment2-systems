@@ -307,8 +307,8 @@ class FlashAttentionTriton(torch.autograd.Function):
         K.to(device)
         V.to(device)
 
-        Q_TILE_SIZE = 32
-        K_TILE_SIZE = 16
+        Q_TILE_SIZE = 8
+        K_TILE_SIZE = 8
 
         if len(Q.shape) == 2: Q = Q.unsqueeze(0)
         if len(K.shape) == 2: K = K.unsqueeze(0)

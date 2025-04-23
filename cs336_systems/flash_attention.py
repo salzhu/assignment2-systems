@@ -218,18 +218,19 @@ def flash_fwd_kernel(
         m_ij = tl.maximum(m, rowmax) 
 
         P_ij = tl.exp(S_ij - tl.view(m_ij, (Q_TILE_SIZE, 1))) 
-        # assert P_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE)
 
         l2 = tl.exp(m - m_ij) * l + tl.sum(P_ij, axis=-1)
         
-        # O = tl.dot(diag, O)
-        diag = tl.exp(m[:] - m_ij[:])
+        diag = tl.exp(m - m_ij)
         O2 = O * diag[:, None]
         O2 += tl.dot(P_ij, V_j)
 
         K_tile_ptr = K_tile_ptr.advance((0,K_TILE_SIZE))
         V_tile_ptr = V_tile_ptr.advance((0,K_TILE_SIZE))
 
+    tl.device_print("l2", l2)
+    tl.device_print("O2", O2)
+    
     tl.store(O_tile_ptr, 
              O2 / l2[:, None],
              boundary_check=(0,)

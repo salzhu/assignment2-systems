@@ -198,9 +198,7 @@ def flash_fwd_kernel(
 
     # Initialize a buffer to write to
     O = tl.zeros((Q_TILE_SIZE, D), dtype=tl.float32)
-    O2 = tl.zeros((Q_TILE_SIZE, D), dtype=tl.float32)
     l = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
-    l2 = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
     m = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32) - float('inf') 
     S_ij = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
     rowmax = tl.zeros((Q_TILE_SIZE,), dtype=tl.float32)
@@ -210,7 +208,7 @@ def flash_fwd_kernel(
         K_j = tl.load(K_tile_ptr, boundary_check=(0, 1), padding_option="zero")
         V_j = tl.load(V_tile_ptr, boundary_check=(0, 1), padding_option="zero")
 
-        # S_ij = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
+        S_ij = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
         # print()
         S_ij = tl.dot(Q, tl.trans(K_j), acc=S_ij)
         S_ij *= scale

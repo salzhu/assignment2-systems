@@ -220,10 +220,6 @@ def flash_fwd_kernel(
         P_ij = tl.exp(S_ij - tl.view(m_ij, (Q_TILE_SIZE, 1))) 
         # assert P_ij.shape == (Q_TILE_SIZE, K_TILE_SIZE)
 
-        # tl.device_print("m_ij", m_ij)
-        # tl.device_print("l", l)
-
-        # l2 = tl.exp(m - m_ij) * l #+ tl.sum(P_ij, axis=-1) # bad line
         l2 = tl.exp(m - m_ij) * l + tl.sum(P_ij, axis=-1)
         
         # O = tl.dot(diag, O)
@@ -232,7 +228,7 @@ def flash_fwd_kernel(
         O2 += tl.dot(P_ij, V_j)
 
         K_tile_ptr = K_tile_ptr.advance((K_TILE_SIZE,))
-        V_tile_ptr = V_tile_ptr.advance((K_TILE_SIZE,))
+        V_tile_ptr = V_tile_ptr.advance((0,K_TILE_SIZE))
 
     tl.store(O_tile_ptr, 
              O2 / l2[:, None],

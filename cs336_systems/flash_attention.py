@@ -224,7 +224,7 @@ def flash_fwd_kernel(
             for s in range(Q_TILE_SIZE):
                 for t in range(K_TILE_SIZE):
                     if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE: 
-                        mask[s][t] = 1
+                        mask[s,t] = 1
             S_ij = S_ij + tl.where(mask, 0, -1.0e6)
 
         rowmax = tl.max(S_ij, axis=-1) # 1?

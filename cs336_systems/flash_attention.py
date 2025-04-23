@@ -14,17 +14,22 @@ def manual_backward(Q, K, V, O, dO, L):
     d = Q.shape[-1]
 
     D = torch.sum(O * dO, dim=-1)
-    S = torch.bmm(Q, K.transpose(1,2)) / np.sqrt(d)
-    print(S.shape)
-    print(L.shape)
-    # S = einsum(Q, K, "batch B_q d, batch B_k d -> batch B_q B_k") / np.sqrt(d) 
+    # S = torch.bmm(Q, K.transpose(1,2)) / np.sqrt(d)
+    # print(S.shape)
+    # print(L.shape)
+    S = einsum(Q, K, "batch T_q d, batch T_k d -> batch T_q T_k") / np.sqrt(d) 
 
     P = torch.exp(S - L[:,None]) 
-    dV = torch.bmm(P.transpose(1,2), dO) 
-    dP = torch.bmm(dO, V.transpose(1,2))
+    # dV = torch.bmm(P.transpose(1,2), dO) 
+    S = einsum(P, dO, "batch T_q T_k, batch T_q d -> batch T_k d") 
+    # dP = torch.bmm(dO, V.transpose(1,2))
+    dP = einsum(dO, V, "batch T_q d, batch T_k d -> batch T_q T_k") 
     dS = P * (dP - D[:,None]) 
-    dQ = torch.bmm(dS, K) / np.sqrt(d) 
-    dK = torch.bmm(dS.transpose(1,2), Q) / np.sqrt(d)
+    
+    # dQ = torch.bmm(dS, K) / np.sqrt(d) 
+    dQ = einsum(dS, K, "batch T_q T_k, batch T_k d -> batch T_q d") / np.sqrt(d) 
+    # dK = torch.bmm(dS.transpose(1,2), Q) / np.sqrt(d)
+    dK = einsum(dS, Q, "batch T_q T_k, batch T_q d -> batch T_k d") / np.sqrt(d) 
     # dV = einsum(P, dO, "batch B_q B_k, batch B_q d -> batch B_k d")
     # dP = einsum(dO, V, "batch B_k d, b")
     

@@ -267,6 +267,7 @@ class FlashAttentionTriton(torch.autograd.Function):
 
         D1 = Q.shape[1]
         D2 = Q.shape[2]
+        print(Q.shape)
 
         T_q = D1 // Q_TILE_SIZE
         T_k = D2 // K_TILE_SIZE
@@ -285,7 +286,7 @@ class FlashAttentionTriton(torch.autograd.Function):
             O.stride(0), O.stride(1), O.stride(2),
             L.stride(0), L.stride(1), 
             T_q, T_k, 
-            scale=1/np.sqrt(D1),
+            scale=1/np.sqrt(D2),
             D=D,
             Q_TILE_SIZE=Q_TILE_SIZE, K_TILE_SIZE=K_TILE_SIZE
         )

@@ -20,11 +20,11 @@ def manual_backward(Q, K, V, O, dO, L):
     # S = einsum(Q, K, "batch B_q d, batch B_k d -> batch B_q B_k") / np.sqrt(d) 
 
     P = torch.exp(S - L[:,None]) 
-    dV = torch.bmm(P.T, dO) 
-    dP = torch.bmm(dO, V.T)
-    dS = P * (dP - D) 
+    dV = torch.bmm(P.transpose(1,2), dO) 
+    dP = torch.bmm(dO, V.transpose(1,2))
+    dS = P * (dP - D[:,None]) 
     dQ = torch.bmm(dS, K) / np.sqrt(d) 
-    dK = torch.bmm(dS.T, Q) / np.sqrt(d)
+    dK = torch.bmm(dS.transpose(1,2), Q) / np.sqrt(d)
     # dV = einsum(P, dO, "batch B_q B_k, batch B_q d -> batch B_k d")
     # dP = einsum(dO, V, "batch B_k d, b")
     

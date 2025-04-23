@@ -26,6 +26,8 @@ def manual_backward(Q, K, V, O, dO, L):
     
     return dQ, dK, dV, None
 
+compiled_backward = torch.compile(manual_backward)
+
 class FlashAttentionTorch(torch.autograd.Function):
     
     @staticmethod
@@ -139,13 +141,7 @@ class FlashAttentionTorch(torch.autograd.Function):
     def backward(ctx, dO):
         Q, K, V, O, L = ctx.saved_tensors
         # compiled_backward = torch.compile(manual_backward)
-        print(Q.shape)
-        print(K.shape)
-        print(V.shape)
-        print(O.shape)
-        print(L.shape)
-        print(dO.shape)
-        return manual_backward(Q, K, V, O, dO, L)
+        return compiled_backward(Q, K, V, O, dO, L)
 
 
 # @triton.jit

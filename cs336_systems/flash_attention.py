@@ -138,6 +138,7 @@ def flash_fwd_kernel(
     D: tl.constexpr,
     Q_TILE_SIZE: tl.constexpr,
     K_TILE_SIZE: tl.constexpr,
+    is_causal: tl.constexpr
 ):
     # Program indices
     query_tile_index = tl.program_id(0)
@@ -213,6 +214,18 @@ def flash_fwd_kernel(
         # print()
         S_ij = tl.dot(Q, tl.trans(K_j), acc=S_ij)
         S_ij *= scale
+
+        if is_causal:
+            # mask is B_q x B_k of 0 1 1 1... 0 0 1 1 ... 
+            # query offset is query_tile_index * Q_TILE_SIZE 
+            # key offset is (j - 1) * K_TILE_SIZE
+            # mask[s][t] = 1 if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE
+            mask = tl.zeros((Q_TILE_SIZE, K_TILE_SIZE), dtype=tl.float32)
+            for s in range(Q_TILE_SIZE):
+                for t in range(K_TILE_SIZE):
+                    if s + query_tile_index * Q_TILE_SIZE < t + (j - 1) * K_TILE_SIZE: 
+                        mask[s][t] = 1
+            S_ij = S_ij + tl.where(mask, 0, -1.0e6)
 
         rowmax = tl.max(S_ij, axis=-1) # 1?
 
@@ -296,7 +309,8 @@ class FlashAttentionTriton(torch.autograd.Function):
             N_QUERIES, N_KEYS, 
             scale=1/np.sqrt(D),
             D=D,
-            Q_TILE_SIZE=Q_TILE_SIZE, K_TILE_SIZE=K_TILE_SIZE
+            Q_TILE_SIZE=Q_TILE_SIZE, K_TILE_SIZE=K_TILE_SIZE,
+            is_causal=is_causal
         )
                 
         # reshape O, L

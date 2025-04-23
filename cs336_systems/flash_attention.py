@@ -194,8 +194,8 @@ def flash_fwd_kernel(
     # Load Q_i from global memory 
     Q = tl.load(Q_tile_ptr)
 
-    # T_k = tl.cdiv(N_KEYS, K_TILE_SIZE)
-    T_k = N_KEYS
+    T_k = tl.cdiv(N_KEYS, K_TILE_SIZE)
+    # T_k = N_KEYS
 
     # Initialize a buffer to write to
     O = tl.zeros((Q_TILE_SIZE, D), dtype=tl.float32)
@@ -274,8 +274,8 @@ class FlashAttentionTriton(torch.autograd.Function):
         # T_q = tl.cdiv(D1, Q_TILE_SIZE)
         # T_k = tl.cdiv(D2, K_TILE_SIZE)
 
-        T_q = D // Q_TILE_SIZE
-        T_k = D // K_TILE_SIZE
+        T_q = N_QUERIES // Q_TILE_SIZE
+        T_k = N_KEYS // K_TILE_SIZE
 
         # T_q = D2 // Q_TILE_SIZE
         # T_k = D2 // K_TILE_SIZE

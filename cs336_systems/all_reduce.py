@@ -13,6 +13,7 @@ def setup(rank, world_size):
 
 def all_reduce_time(rank, data, world_size):
     setup(rank, world_size)
+    data.to(f"cuda:{rank}")
         
     dist.all_reduce(data, async_op=False)
     torch.cuda.synchronize()

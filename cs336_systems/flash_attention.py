@@ -224,8 +224,7 @@ def flash_fwd_kernel(
         # tl.device_print("l", l)
 
         # l2 = tl.exp(m - m_ij) * l #+ tl.sum(P_ij, axis=-1) # bad line
-        l2 = tl.exp(m - m_ij) * l
-        l2 = tl.sum(P_ij, axis=-1)
+        l2 = tl.exp(m - m_ij) * l + tl.sum(P_ij, axis=-1)
         
         # O = tl.dot(diag, O)
         # diag = tl.exp(m[:] - m_ij[:])

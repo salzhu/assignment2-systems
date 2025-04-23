@@ -232,6 +232,8 @@ def flash_fwd_kernel(
 
     # tl.device_print("m", m)
     tl.device_print("S_ij", S_ij)
+    tl.device_print("rowmax", rowmax)
+    tl.device_print("m", m)
     
     tl.store(O_tile_ptr, 
              O2 / l2[:, None],

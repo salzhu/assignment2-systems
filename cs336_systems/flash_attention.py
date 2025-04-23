@@ -232,8 +232,8 @@ def flash_fwd_kernel(
 
         m = m_ij 
 
-    tl.device_print("m", m)
-    tl.device_print("rowmax", rowmax)
+    # tl.device_print("m", m)
+    # tl.device_print("rowmax", rowmax)
     # tl.device_print("m", m)
 
     O = O / l[:, None]

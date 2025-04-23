@@ -274,11 +274,11 @@ class FlashAttentionTriton(torch.autograd.Function):
         # T_q = D // Q_TILE_SIZE
         # T_k = D // K_TILE_SIZE
 
-        T_q = D1 // Q_TILE_SIZE
+        T_q = D2 // Q_TILE_SIZE
         T_k = D2 // K_TILE_SIZE
 
-        O = torch.empty((batch_size, D1, D2), dtype=torch.float32).to(device)
-        L = torch.empty((batch_size, D1), dtype=torch.float32).to(device)
+        O = torch.empty((batch_size, D2, D2), dtype=torch.float32).to(device)
+        L = torch.empty((batch_size, D2), dtype=torch.float32).to(device)
 
         # launch grid: (T_q, batch_size)
 

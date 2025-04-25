@@ -192,7 +192,7 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--flat", type=bool, default=False)
+    parser.add_argument("--flat", type=int, default=0)
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -220,14 +220,16 @@ if __name__ == '__main__':
     step_times = manager.list()
     grad_collect_times = manager.list()
 
-    if args.flat == False:
-        print('naive ddp')
+    print(args.flat)
+
+    if args.flat == 0:
+        print('naive ddp NOT FLAT')
         mp.spawn(ddp_naive_main, args=(world_size,data_in, data_targ, model.state_dict(),
                                             vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
                                             batch_size,
                                             state_dicts, step_times, grad_collect_times), 
                 nprocs=world_size, join=True)
-    else:
+    elif args.flat == 1:
         print('naive ddp flat')
         mp.spawn(ddp_flat_main, args=(world_size,data_in, data_targ, model.state_dict(),
                                             vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,

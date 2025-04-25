@@ -105,6 +105,8 @@ if __name__ == '__main__':
     
     print("training og")
 
+    model.to(device)
+
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
     for step in range(n):
         # Forward pass

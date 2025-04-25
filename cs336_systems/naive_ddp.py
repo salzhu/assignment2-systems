@@ -17,7 +17,7 @@ def setup(rank, world_size):
 def cleanup():
     dist.destroy_process_group()
 
-def data_parallelism_main(rank, world_size, data_in, data_targ, weights,  
+def data_parallelism_main(rank, world_size, data_in, data_targ, weights, 
                           vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, batch_size):
     # torch.cuda.set_device(rank)
     setup(rank, world_size)
@@ -87,6 +87,7 @@ if __name__ == '__main__':
     rope_theta = 10000
 
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
+    print(model.parameters())
 
     data_in = torch.randint(0,vocab_size,(n, batch_size, context_length), device=device)
     data_targ = torch.randint(0,vocab_size,(n, batch_size, context_length), device=device)
@@ -95,3 +96,8 @@ if __name__ == '__main__':
                                           vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
                                           batch_size), 
              nprocs=world_size, join=True)
+    
+    # need to figure out how to pass in model parameters (dict)
+    # check that the final weights are same
+    # check they match a normal trained model 
+    # measure training step time and sharing gradients time

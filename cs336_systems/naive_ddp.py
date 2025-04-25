@@ -49,6 +49,7 @@ def data_parallelism_main(rank, world_size, data_in, data_targ, weights,
     num_steps = data_in.shape[0]
 
     for step in range(num_steps):
+        torch.cuda.synchronize()
         print(f"Rank {rank} train step {step}")
         # Forward pass
         inputs = data_in[step]
@@ -61,10 +62,14 @@ def data_parallelism_main(rank, world_size, data_in, data_targ, weights,
         
         loss = cross_entropy(outputs, targets)
         loss.backward()
+
+        torch.cuda.synchronize()
         
         # Sync gradients across workers (only difference between standard training and DDP)
         for param in model.parameters():
             dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=False)
+
+        torch.cuda.synchronize()
         
         # Update parameters
         optimizer.step()
@@ -97,6 +102,27 @@ if __name__ == '__main__':
                                           vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
                                           batch_size), 
              nprocs=world_size, join=True)
+    
+    print("training og")
+
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+    for step in range(n):
+        # Forward pass
+        inputs = data_in[step]
+        targets = data_targ[step]
+
+        outputs = model(inputs)
+
+        outputs = outputs.view(-1, outputs.size(-1))
+        targets = targets.view(-1)
+        
+        loss = cross_entropy(outputs, targets)
+        loss.backward()
+        optimizer.step()
+
+        params = model.state_dict()
+        print(f"[data_parallelism] Rank og: step = {step}, loss = {loss.item()}, params = {params['layers.1.ln1.weight']}", flush=True)
+    
     
     # need to figure out how to pass in model parameters (dict)
     # check that the final weights are same

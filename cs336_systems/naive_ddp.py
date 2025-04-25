@@ -164,7 +164,7 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
         unflat_grads = torch._utils._unflatten_dense_tensors(flat_grads, [tensor for tensor in param_list.values()])
         # print(unflattened[:4])
         new_state_dict = {}
-        for (param, _), tensor in zip(param_list, unflat_grads):
+        for param, tensor in zip(param_list, unflat_grads):
             # new_state_dict[key] = tensor
             param.grad = tensor
 

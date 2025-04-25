@@ -214,7 +214,7 @@ if __name__ == '__main__':
     step_times = manager.list()
     grad_collect_times = manager.list()
 
-    mp.spawn(data_parallelism_main, args=(world_size,data_in, data_targ, model.state_dict(),
+    mp.spawn(ddp_flat_main, args=(world_size,data_in, data_targ, model.state_dict(),
                                           vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
                                           batch_size,
                                           state_dicts, step_times, grad_collect_times), 

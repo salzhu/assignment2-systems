@@ -16,6 +16,8 @@ class DDPIndividualParameters:
         self.handles = []
         self.module = module
 
+        print(self.module.parameters())
+
         for param in self.module.parameters():
             reduce_handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)
             handle = param.register_post_accumulate_grad_hook(reduce_handle)

@@ -35,10 +35,12 @@ def all_reduce(rank, world_size, tensor, result):
     # Warmup
     # tensor.to(f'cuda:{rank}')
     # tensor.to
-    dist.all_reduce(tensor=tensor, op=dist.ReduceOp.SUM, async_op=False)
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()  # Wait for CUDA kernels to finish
-        dist.barrier()            # Wait for all the processes to get here
+    for i in range(5):
+        dist.all_reduce(tensor=tensor, op=dist.ReduceOp.SUM, async_op=False)
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()  # Wait for CUDA kernels to finish
+            dist.barrier()            # Wait for all the processes to get here
+    
     # Perform all-reduce
     start_time = timeit.default_timer()
     dist.all_reduce(tensor=tensor, op=dist.ReduceOp.SUM, async_op=False)

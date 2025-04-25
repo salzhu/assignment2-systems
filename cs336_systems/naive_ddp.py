@@ -5,6 +5,7 @@ import torch.multiprocessing as mp
 
 import timeit 
 import pandas as pd 
+import numpy as np 
 
 from cs336_basics.model import BasicsTransformerLM 
 from cs336_basics.nn_utils import cross_entropy
@@ -19,7 +20,7 @@ def cleanup():
 
 def data_parallelism_main(rank, world_size, data_in, data_targ, weights, 
                           vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, batch_size, 
-                          state_dicts):
+                          state_dicts, step_times, grad_collect_times):
     # torch.cuda.set_device(rank)
     setup(rank, world_size)
 
@@ -48,9 +49,13 @@ def data_parallelism_main(rank, world_size, data_in, data_targ, weights,
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)  # Each rank has own optimizer state
 
     num_steps = data_in.shape[0]
+    warmup_steps = 5
 
     for step in range(num_steps):
         torch.cuda.synchronize()
+
+        start_time_step = timeit.default_timer()
+
         print(f"Rank {rank} train step {step}")
         # Forward pass
         inputs = data_in[step]
@@ -65,17 +70,27 @@ def data_parallelism_main(rank, world_size, data_in, data_targ, weights,
         loss.backward()
 
         torch.cuda.synchronize()
+
+        start_time_grad = timeit.default_timer()
         
         # Sync gradients across workers (only difference between standard training and DDP)
         for param in model.parameters():
             dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=False)
 
         torch.cuda.synchronize()
+
+        end_time_grad = timeit.default_timer()
         
         # Update parameters
         optimizer.step()
+        end_time_step = timeit.default_timer()
+        
         params = model.state_dict()
         print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, params = {params['layers.1.ln1.weight']}", flush=True)
+
+        if step >= warmup_steps: 
+            step_times.append(end_time_step - start_time_step)
+            grad_collect_times.append(end_time_grad - start_time_grad)
     
     # state_dicts.append(model.state_dict())
     cleanup()
@@ -84,7 +99,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     world_size = 2
 
-    n = 4
+    n = 20
     batch_size = 4
     context_length = 256
 
@@ -103,11 +118,20 @@ if __name__ == '__main__':
     manager = mp.Manager()
     state_dicts = manager.list()
 
+    step_times = manager.list()
+    grad_collect_times = manager.list()
+
     mp.spawn(data_parallelism_main, args=(world_size,data_in, data_targ, model.state_dict(),
                                           vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
                                           batch_size,
-                                          state_dicts), 
+                                          state_dicts, step_times, grad_collect_times), 
              nprocs=world_size, join=True)
+    
+    print('step')
+    print(np.mean([time.cpu() for time in step_times]))
+
+    print('grad collect')
+    print(np.mean([time.cpu() for time in grad_collect_times]))
     
     print("training og --- check results match!")
 
@@ -131,6 +155,7 @@ if __name__ == '__main__':
         params = model.state_dict()
         print(f"[data_parallelism] Rank og: step = {step}, loss = {loss.item()}, params = {params['layers.1.ln1.weight']}", flush=True)
     
+    print("done")
     # print("checking params are the same") 
     # model2 = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
     # model2.load_state_dict(state_dicts[-1])

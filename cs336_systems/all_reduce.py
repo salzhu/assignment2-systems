@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     df = {'num. processes': [], 'data size': [], 'time (ms)': []}
 
-    world_sizes = [2, 4]
+    world_sizes = [6]
     shapes = [
         (250, 1000, '1MB'), # 1mb
         (2500, 1000, '10MB'), # 10mb

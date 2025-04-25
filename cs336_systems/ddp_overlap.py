@@ -18,6 +18,8 @@ class DDPIndividualParameters:
 
         print('------------------------------------------------')
         print(self.module.parameters())
+        for param in self.module.parameters():
+            print(param.grad, param)
         print('------------------------------------------------')
 
         for param in self.module.parameters():

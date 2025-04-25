@@ -65,26 +65,27 @@ if __name__ == '__main__':
     df = {'model dim': [], 'seq len': [], 'forward time (ms)': [], 'backward time (ms)': [], 'peak memory': []}
 
     dims = [1024, 2048, 4096, 8192]
-    context_lens = [1024, 2048, 4096, 8192]
+    context_lens = [1024, 2048, 4096, 8192, 16384]
 
     for dim in dims:
         for context_len in context_lens: 
             print(f'dim {dim} len {context_len}...', end=' ')
-            # try: 
-            ft, bt, fm = pytorch_attn(8, dim, context_len)
+            try: 
+                ft, bt, fm = pytorch_attn(8, dim, context_len)
 
-            df['model dim'].append(dim)
-            df['seq len'].append(context_len)
-            df['forward time (ms)'].append(1000 * ft)
-            df['backward time (ms)'].append(1000 * bt)
-            df['peak memory'].append(fm / (1024*1024))
-            print(1000 * ft, 1000 * bt, fm / (1024*1024))
-            # except: 
-            #     df['model dim'].append(dim)
-            #     df['seq len'].append(context_len)
-            #     df['forward time (ms)'].append('oom')
-            #     df['backward time (ms)'].append('oom')
-            #     df['peak memory'].append('oom')
+                df['model dim'].append(dim)
+                df['seq len'].append(context_len)
+                df['forward time (ms)'].append(1000 * ft)
+                df['backward time (ms)'].append(1000 * bt)
+                df['peak memory'].append(fm / (1024*1024))
+                print(1000 * ft, 1000 * bt, fm / (1024*1024))
+            except: 
+                df['model dim'].append(dim)
+                df['seq len'].append(context_len)
+                df['forward time (ms)'].append('oom')
+                df['backward time (ms)'].append('oom')
+                df['peak memory'].append('oom')
+                print('oom')
 
     df = pd.DataFrame(df)
     print(df.to_latex(index=False))

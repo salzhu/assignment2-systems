@@ -54,7 +54,7 @@ def all_reduce(rank, world_size, tensor, result):
     all_times = [torch.empty(1,device='cuda') for _ in range(world_size)]
     dist.all_gather(tensor_list=all_times, tensor=torch.tensor([duration]).cuda(rank), async_op=False)
     # result = np.mean(all_times)
-    result.append(np.mean(all_times))
+    result.append(torch.mean(all_times))
 
     cleanup()
 

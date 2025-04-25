@@ -49,6 +49,7 @@ def data_parallelism_main(rank, world_size, data_in, data_targ, weights,
     num_steps = data_in.shape[0]
 
     for step in range(num_steps):
+        print(f"Rank {rank} train step {step}")
         # Forward pass
         inputs = data_in[step]
         targets = data_targ[step]
@@ -67,7 +68,8 @@ def data_parallelism_main(rank, world_size, data_in, data_targ, weights,
         
         # Update parameters
         optimizer.step()
-        print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, params = {model.state_dict()}", flush=True)
+        params = model.state_dict()
+        print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, params = {params['layers.1.ln1.weight']}", flush=True)
     
     cleanup()
 
@@ -87,7 +89,6 @@ if __name__ == '__main__':
     rope_theta = 10000
 
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
-    print(model.state_dict())
 
     data_in = torch.randint(0,vocab_size,(n, batch_size, context_length), device=device)
     data_targ = torch.randint(0,vocab_size,(n, batch_size, context_length), device=device)

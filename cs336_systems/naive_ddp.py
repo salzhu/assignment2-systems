@@ -158,18 +158,19 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
 
         param_list = model.state_dict()
         
-        params_flat = torch._utils._flatten_dense_tensors([tensor for tensor in param_list.values()])
-        dist.all_reduce(tensor=params_flat, op=dist.ReduceOp.AVG, async_op=False)
+        flat_grads = torch._utils._flatten_dense_tensors([param.grad for param in model.parameters()])
+        dist.all_reduce(tensor=flat_grads, op=dist.ReduceOp.AVG, async_op=False)
 
-        unflattened = torch._utils._unflatten_dense_tensors(params_flat, [tensor for tensor in param_list.values()])
-        print(unflattened[:4])
+        unflat_grads = torch._utils._unflatten_dense_tensors(flat_grads, [tensor for tensor in param_list.values()])
+        # print(unflattened[:4])
         new_state_dict = {}
-        for (key, _), tensor in zip(param_list.items(), unflattened):
-            new_state_dict[key] = tensor
+        for (param, _), tensor in zip(param_list, unflat_grads):
+            # new_state_dict[key] = tensor
+            param.grad = tensor
 
         # for param in model.parameters():
         #     dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=False)
-        model.load_state_dict(new_state_dict)
+        # model.load_state_dict(new_state_dict)
 
         torch.cuda.synchronize()
 

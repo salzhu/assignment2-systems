@@ -91,7 +91,7 @@ if __name__ == '__main__':
     data_in = torch.randint(0,vocab_size,(n, batch_size, context_length), device=device)
     data_targ = torch.randint(0,vocab_size,(n, batch_size, context_length), device=device)
 
-    mp.spawn(data_parallelism_main, args=(world_size,data_in, data_targ, model.parameters(),
+    mp.spawn(data_parallelism_main, args=(world_size,data_in, data_targ, data_in,
                                           vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
                                           batch_size), 
              nprocs=world_size, join=True)

@@ -35,8 +35,8 @@ def pytorch_attn(batch_size, dim, seq_len, n=100, w=10):
 
         start_time = timeit.default_timer()
         out = attn(rand_Q, rand_K, rand_V)
-        print(out)
-        print(torch.sum(out, [0,1,2]))
+        # print(out)
+        # print(torch.sum(out, [0,1,2]))
         torch.cuda.synchronize()
         mid_time = timeit.default_timer()
         
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     for dim in dims:
         for context_len in context_lens: 
-            print(f'dim {dim} len {context_len}...')
+            print(f'dim {dim} len {context_len}...', end=' ')
             # try: 
             ft, bt, fm = pytorch_attn(8, dim, context_len)
 
@@ -78,6 +78,7 @@ if __name__ == '__main__':
             df['forward time (ms)'].append(1000 * ft)
             df['backward time (ms)'].append(1000 * bt)
             df['peak memory'].append(fm)
+            print(1000 * ft, 1000 * bt, fm)
             # except: 
             #     df['model dim'].append(dim)
             #     df['seq len'].append(context_len)

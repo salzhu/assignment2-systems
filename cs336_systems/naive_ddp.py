@@ -126,7 +126,7 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)  # Each rank has own optimizer state
 
     num_steps = data_in.shape[0]
-    warmup_steps = 0
+    warmup_steps = 5
 
     for step in range(num_steps):
         torch.cuda.synchronize()
@@ -194,15 +194,15 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     world_size = 2
 
-    n = 4
+    n = 20
     batch_size = 4
     context_length = 256
 
-    vocab_size = 100 # 10000
-    d_model = 16 # 1600
-    num_layers = 2 # 48
-    d_ff = 64 # 6400
-    num_heads = 2 # 25
+    vocab_size = 10000
+    d_model = 1600
+    num_layers = 48
+    d_ff = 6400
+    num_heads = 25
     rope_theta = 10000
 
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)

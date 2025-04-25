@@ -18,7 +18,7 @@ def cleanup():
     dist.destroy_process_group()
 
 def data_parallelism_main(rank, world_size, data_in, data_targ, weights,  
-                          vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, batch_size=4):
+                          vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, batch_size):
     # torch.cuda.set_device(rank)
     setup(rank, world_size)
 
@@ -28,12 +28,13 @@ def data_parallelism_main(rank, world_size, data_in, data_targ, weights,
     local_batch_size = batch_size // world_size  # @inspect local_batch_size
     start_index = rank * local_batch_size  # @inspect start_index
     end_index = start_index + local_batch_size  # @inspect end_index
-    data_in = data_in[:,start_index:end_index]#.cuda(rank) # n_steps x 2 x data
-    data_targ = data_targ[:,start_index:end_index]#.cuda(rank) # n_steps x 2 x data
+    data_in = data_in[:,start_index:end_index].cuda(rank) # n_steps x 2 x data
+    data_targ = data_targ[:,start_index:end_index].cuda(rank) # n_steps x 2 x data
 
     # use params passed in to load a transformer 
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
     model.load_state_dict(weights)
+    model = model.cuda(rank)
 
     # train one step 
     # loss.backward() and get gradients, reduce 
@@ -79,10 +80,10 @@ if __name__ == '__main__':
     context_length = 256
 
     vocab_size = 10000
-    d_model = 1600
-    num_layers = 48
-    d_ff = 6400
-    num_heads = 25
+    d_model = 16 # 1600
+    num_layers = 2 # 48
+    d_ff = 64 # 6400
+    num_heads = 2 # 25
     rope_theta = 10000
 
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
@@ -91,5 +92,6 @@ if __name__ == '__main__':
     data_targ = torch.randint(0,vocab_size,(n, batch_size, context_length), device=device)
 
     mp.spawn(data_parallelism_main, args=(world_size,data_in, data_targ, model.parameters(),
-                                          vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta), 
+                                          vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
+                                          batch_size), 
              nprocs=world_size, join=True)

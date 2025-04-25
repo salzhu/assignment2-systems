@@ -77,8 +77,8 @@ if __name__ == '__main__':
             df['seq len'].append(context_len)
             df['forward time (ms)'].append(1000 * ft)
             df['backward time (ms)'].append(1000 * bt)
-            df['peak memory'].append(fm)
-            print(1000 * ft, 1000 * bt, fm)
+            df['peak memory'].append(fm / (1024*1024))
+            print(1000 * ft, 1000 * bt, fm / (1024*1024))
             # except: 
             #     df['model dim'].append(dim)
             #     df['seq len'].append(context_len)

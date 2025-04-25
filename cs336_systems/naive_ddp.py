@@ -77,7 +77,7 @@ def data_parallelism_main(rank, world_size, data_in, data_targ, weights,
         params = model.state_dict()
         print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, params = {params['layers.1.ln1.weight']}", flush=True)
     
-    state_dicts.append(model.state_dict())
+    # state_dicts.append(model.state_dict())
     cleanup()
 
 if __name__ == '__main__':
@@ -131,13 +131,13 @@ if __name__ == '__main__':
         params = model.state_dict()
         print(f"[data_parallelism] Rank og: step = {step}, loss = {loss.item()}, params = {params['layers.1.ln1.weight']}", flush=True)
     
-    print("checking params are the same") 
-    model2 = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
-    model2.load_state_dict(state_dicts[-1])
-    model2_params = model2.state_dict()
+    # print("checking params are the same") 
+    # model2 = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
+    # model2.load_state_dict(state_dicts[-1])
+    # model2_params = model2.state_dict()
 
-    for name, param in model.state_dict().items():
-        print(f"Layer: {name}, match: {param == model2_params[name]}")
+    # for name, param in model.state_dict().items():
+    #     print(f"Layer: {name}, match: {param == model2_params[name]}")
     
     # need to figure out how to pass in model parameters (dict)
     # check that the final weights are same

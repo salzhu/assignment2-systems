@@ -18,7 +18,8 @@ def cleanup():
     dist.destroy_process_group()
 
 def data_parallelism_main(rank, world_size, data_in, data_targ, weights, 
-                          vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, batch_size):
+                          vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, batch_size, 
+                          state_dicts):
     # torch.cuda.set_device(rank)
     setup(rank, world_size)
 
@@ -76,6 +77,7 @@ def data_parallelism_main(rank, world_size, data_in, data_targ, weights,
         params = model.state_dict()
         print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, params = {params['layers.1.ln1.weight']}", flush=True)
     
+    state_dicts.append(model.state_dict())
     cleanup()
 
 if __name__ == '__main__':
@@ -98,9 +100,13 @@ if __name__ == '__main__':
     data_in = torch.randint(0,vocab_size,(n, batch_size, context_length), device=device)
     data_targ = torch.randint(0,vocab_size,(n, batch_size, context_length), device=device)
 
+    manager = mp.Manager()
+    state_dicts = manager.list()
+
     mp.spawn(data_parallelism_main, args=(world_size,data_in, data_targ, model.state_dict(),
                                           vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
-                                          batch_size), 
+                                          batch_size,
+                                          state_dicts), 
              nprocs=world_size, join=True)
     
     print("training og --- check results match!")
@@ -125,6 +131,13 @@ if __name__ == '__main__':
         params = model.state_dict()
         print(f"[data_parallelism] Rank og: step = {step}, loss = {loss.item()}, params = {params['layers.1.ln1.weight']}", flush=True)
     
+    print("checking params are the same") 
+    model2 = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
+    model2.load_state_dict(state_dicts[-1])
+    model2_params = model2.state_dict()
+
+    for name, param in model.state_dict().items():
+        print(f"Layer: {name}, match: {param == model2_params[name]}")
     
     # need to figure out how to pass in model parameters (dict)
     # check that the final weights are same

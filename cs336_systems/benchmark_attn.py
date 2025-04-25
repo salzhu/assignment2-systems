@@ -1,0 +1,79 @@
+import torch 
+import numpy as np 
+
+import wandb
+import os
+import timeit
+import pandas as pd 
+
+from cs336_basics.model import scaled_dot_product_attention
+
+def pytorch_attn(batch_size, dim, seq_len, n=100, w=10):
+    # make the attention module 
+    # make random inputs Q, K, V of size batch_size x seq_len x dim 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    rand_Q = torch.randn(batch_size, seq_len, dim, device=device)
+    rand_K = torch.randn(batch_size, seq_len, dim, device=device)
+    rand_V = torch.randn(batch_size, seq_len, dim, device=device)
+
+    forward_time = []
+    backward_time = []
+
+    forward_memory = []
+    backward_memory = []
+
+    for i in range(w + n):
+        torch.cuda.synchronize()
+
+        start_time = timeit.default_timer()
+        out = scaled_dot_product_attention(rand_Q, rand_K, rand_V)
+        torch.cuda.synchronize()
+        mid_time = timeit.default_timer()
+        
+        mid_mem = torch.cuda.max_memory_allocated()
+        
+        torch.flatten(out).mean().backward()
+        torch.cuda.synchronize()
+        end_time = timeit.default_timer()
+        end_mem = torch.cuda.max_memory_allocated()
+
+        if i >= w:
+            forward_time.append(mid_time - start_time)
+            backward_time.append(end_time - mid_time)
+
+            forward_memory.append(mid_mem)
+            backward_memory.append(end_mem)
+
+        torch.cuda.reset_peak_memory_stats()
+
+    return np.mean(forward_time), np.mean(backward_time), np.mean(forward_memory)
+
+    # for 100 passes
+    # forward, backward, memory before and after backward / forward 
+
+if __name__ == '__main__':
+    df = {'model dim': [], 'seq len': [], 'forward time (ms)': [], 'backward time (ms)': [], 'peak memory': []}
+
+    dims = [1024, 2048, 4096, 8192]
+    context_lens = [1024, 2048, 4096, 8192]
+
+    for dim in dims:
+        for context_len in context_lens: 
+            try: 
+                ft, bt, fm = pytorch_attn(8, dim, context_len)
+
+                df['model dim'].append(dim)
+                df['seq len'].append(context_len)
+                df['forward time (ms)'].append(1000 * ft)
+                df['backward time (ms)'].append(1000 * bt)
+                df['peak memory'].append(fm)
+            except: 
+                df['model dim'].append(dim)
+                df['seq len'].append(context_len)
+                df['forward time (ms)'].append('oom')
+                df['backward time (ms)'].append('oom')
+                df['peak memory'].append('oom')
+
+    df = pd.DataFrame(df)
+    print(df.to_latex(index=False))

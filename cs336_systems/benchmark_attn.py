@@ -18,9 +18,9 @@ def pytorch_attn(batch_size, dim, seq_len, n=100, w=10):
     # make random inputs Q, K, V of size batch_size x seq_len x dim 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    rand_Q = torch.randn(batch_size, seq_len, dim, device=device)
-    rand_K = torch.randn(batch_size, seq_len, dim, device=device)
-    rand_V = torch.randn(batch_size, seq_len, dim, device=device)
+    rand_Q = torch.randn(batch_size, seq_len, dim, device=device, requires_grad=True)
+    rand_K = torch.randn(batch_size, seq_len, dim, device=device, requires_grad=True)
+    rand_V = torch.randn(batch_size, seq_len, dim, device=device, requires_grad=True)
 
     forward_time = []
     backward_time = []

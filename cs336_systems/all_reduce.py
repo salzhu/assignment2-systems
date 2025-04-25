@@ -24,11 +24,14 @@ def all_reduce_time(rank, data, world_size):
     dist.all_reduce(data, async_op=False)
     torch.cuda.synchronize()
 
+def cleanup():
+    dist.destroy_process_group()
+
 def all_reduce(rank, world_size, tensor, result):
     torch.cuda.set_device(rank)
     setup(rank, world_size)
     # Create tensor
-    tensor = torch.randn(tensor.shape)
+    tensor = torch.randn(tensor.shape).cuda(rank)
     # Warmup
     # tensor.to(f'cuda:{rank}')
     # tensor.to
@@ -50,6 +53,8 @@ def all_reduce(rank, world_size, tensor, result):
     dist.all_gather(tensor_list=all_times, tensor=torch.tensor([duration]), async_op=False)
     # result = np.mean(all_times)
     result.append(np.mean(all_times))
+
+    cleanup()
 
 if __name__ == "__main__":
 

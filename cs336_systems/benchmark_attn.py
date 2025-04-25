@@ -60,20 +60,21 @@ if __name__ == '__main__':
 
     for dim in dims:
         for context_len in context_lens: 
-            try: 
-                ft, bt, fm = pytorch_attn(8, dim, context_len)
+            print(f'dim {dim} len {context_len}...')
+            # try: 
+            ft, bt, fm = pytorch_attn(8, dim, context_len)
 
-                df['model dim'].append(dim)
-                df['seq len'].append(context_len)
-                df['forward time (ms)'].append(1000 * ft)
-                df['backward time (ms)'].append(1000 * bt)
-                df['peak memory'].append(fm)
-            except: 
-                df['model dim'].append(dim)
-                df['seq len'].append(context_len)
-                df['forward time (ms)'].append('oom')
-                df['backward time (ms)'].append('oom')
-                df['peak memory'].append('oom')
+            df['model dim'].append(dim)
+            df['seq len'].append(context_len)
+            df['forward time (ms)'].append(1000 * ft)
+            df['backward time (ms)'].append(1000 * bt)
+            df['peak memory'].append(fm)
+            # except: 
+            #     df['model dim'].append(dim)
+            #     df['seq len'].append(context_len)
+            #     df['forward time (ms)'].append('oom')
+            #     df['backward time (ms)'].append('oom')
+            #     df['peak memory'].append('oom')
 
     df = pd.DataFrame(df)
     print(df.to_latex(index=False))

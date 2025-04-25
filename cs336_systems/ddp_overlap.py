@@ -16,7 +16,9 @@ class DDPIndividualParameters:
         self.handles = []
         self.module = module
 
+        print('------------------------------------------------')
         print(self.module.parameters())
+        print('------------------------------------------------')
 
         for param in self.module.parameters():
             reduce_handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)

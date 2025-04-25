@@ -49,8 +49,8 @@ def all_reduce(rank, world_size, tensor, result):
     duration = end_time - start_time
     print(f"[all_reduce] Rank {rank}: all_reduce(world_size={world_size}) took {duration}", flush=True)
     # dist.all_gather_into_tensor(output_tensor=output, input_tensor=torch.tensor(duration), async_op=False)
-    all_times = [torch.empty(1) for _ in range(world_size)]
-    dist.all_gather(tensor_list=all_times, tensor=torch.tensor([duration]), async_op=False)
+    all_times = [torch.empty(1,device='cuda') for _ in range(world_size)]
+    dist.all_gather(tensor_list=all_times, tensor=torch.tensor([duration]).cuda(rank), async_op=False)
     # result = np.mean(all_times)
     result.append(np.mean(all_times))
 

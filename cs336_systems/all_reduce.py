@@ -15,7 +15,7 @@ lock = threading.Lock()
 def setup(rank, world_size):
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = "29500"
-    dist.init_process_group("gloo", rank=rank, world_size=world_size) # gloo, nccl
+    dist.init_process_group("nccl", rank=rank, world_size=world_size) # gloo, nccl
 
 def all_reduce_time(rank, data, world_size):
     

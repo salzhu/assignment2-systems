@@ -5,8 +5,13 @@ import wandb
 import os
 import timeit
 import pandas as pd 
+import torch.nn as nn
 
 from cs336_basics.model import scaled_dot_product_attention
+
+class Attention(nn.Module):
+    def forward(self, Q, K, V):
+        return scaled_dot_product_attention(Q, K, V)
 
 def pytorch_attn(batch_size, dim, seq_len, n=100, w=10):
     # make the attention module 
@@ -23,11 +28,13 @@ def pytorch_attn(batch_size, dim, seq_len, n=100, w=10):
     forward_memory = []
     backward_memory = []
 
+    attn = Attention()
+
     for i in range(w + n):
         torch.cuda.synchronize()
 
         start_time = timeit.default_timer()
-        out = scaled_dot_product_attention(rand_Q, rand_K, rand_V)
+        out = attn(rand_Q, rand_K, rand_V)
         torch.cuda.synchronize()
         mid_time = timeit.default_timer()
         

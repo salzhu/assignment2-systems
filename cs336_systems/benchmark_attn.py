@@ -35,12 +35,14 @@ def pytorch_attn(batch_size, dim, seq_len, n=100, w=10):
 
         start_time = timeit.default_timer()
         out = attn(rand_Q, rand_K, rand_V)
+        print(out)
+        print(torch.sum(out, [0,1,2]))
         torch.cuda.synchronize()
         mid_time = timeit.default_timer()
         
         mid_mem = torch.cuda.max_memory_allocated()
         
-        torch.sum(out, [0,1,2]).mean().backward()
+        torch.sum(out, [0,1,2]).backward()
         torch.cuda.synchronize()
         end_time = timeit.default_timer()
         end_mem = torch.cuda.max_memory_allocated()

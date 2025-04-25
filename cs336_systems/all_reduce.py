@@ -15,7 +15,7 @@ lock = threading.Lock()
 def setup(rank, world_size):
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = "29500"
-    dist.init_process_group("nccl", rank=rank, world_size=world_size) # gloo, nccl
+    dist.init_process_group("gloo", rank=rank, world_size=world_size) # gloo, nccl
 
 def all_reduce_time(rank, data, world_size):
     
@@ -34,7 +34,6 @@ def all_reduce(rank, world_size, tensor, result):
     tensor = torch.randn(tensor.shape).cuda(rank)
     # Warmup
     # tensor.to(f'cuda:{rank}')
-    # tensor.to
     for i in range(5):
         dist.all_reduce(tensor=tensor, op=dist.ReduceOp.SUM, async_op=False)
         if torch.cuda.is_available():
@@ -50,11 +49,15 @@ def all_reduce(rank, world_size, tensor, result):
     end_time = timeit.default_timer()
     duration = end_time - start_time
     print(f"[all_reduce] Rank {rank}: all_reduce(world_size={world_size}) took {duration}", flush=True)
-    # dist.all_gather_into_tensor(output_tensor=output, input_tensor=torch.tensor(duration), async_op=False)
+    
     all_times = [torch.empty(1,device='cuda') for _ in range(world_size)]
+    # all_times = [torch.empty(1) for _ in range(world_size)]
+    
     dist.all_gather(tensor_list=all_times, tensor=torch.tensor([duration]).cuda(rank), async_op=False)
-    # result = np.mean(all_times)
+    # dist.all_gather(tensor_list=all_times, tensor=torch.tensor([duration]), async_op=False)
+    
     result.append(np.mean([time.cpu() for time in all_times]))
+    # result.append(np.mean(all_times))
 
     cleanup()
 
@@ -64,7 +67,7 @@ if __name__ == "__main__":
 
     df = {'num. processes': [], 'data size': [], 'time (ms)': []}
 
-    world_sizes = [2, 4, 6]
+    world_sizes = [2, 4]
     shapes = [
         (250, 1000, '1MB'), # 1mb
         (2500, 1000, '10MB'), # 10mb

@@ -128,10 +128,10 @@ if __name__ == '__main__':
              nprocs=world_size, join=True)
     
     print('step')
-    print(np.mean([time.cpu() for time in step_times]))
+    print(np.mean(step_times))
 
     print('grad collect')
-    print(np.mean([time.cpu() for time in grad_collect_times]))
+    print(np.mean(grad_collect_times))
     
     print("training og --- check results match!")
 

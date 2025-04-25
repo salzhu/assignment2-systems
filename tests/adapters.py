@@ -5,6 +5,7 @@ from typing import Type
 import torch
 
 from cs336_systems.flash_attention import FlashAttentionTorch, FlashAttentionTriton
+from cs336_systems.ddp_overlap import DDPIndividualParameters
 
 def get_flashattention_autograd_function_pytorch() -> Type:
     """
@@ -55,6 +56,7 @@ def get_ddp_individual_parameters(module: torch.nn.Module) -> torch.nn.Module:
         Instance of a DDP class.
     """
     # For example: return DDPIndividualParameters(module)
+    return DDPIndividualParameters(module)
     raise NotImplementedError
 
 
@@ -69,6 +71,7 @@ def ddp_individual_parameters_on_after_backward(ddp_model: torch.nn.Module, opti
         optimizer: torch.optim.Optimizer
             Optimizer being used with the DDP-wrapped model.
     """
+    return 
     # For example: ddp_model.finish_gradient_synchronization()
     raise NotImplementedError
 

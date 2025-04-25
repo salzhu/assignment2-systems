@@ -87,10 +87,10 @@ if __name__ == '__main__':
     context_length = 256
 
     vocab_size = 10000
-    d_model = 16 # 1600
-    num_layers = 2 # 48
-    d_ff = 64 # 6400
-    num_heads = 2 # 25
+    d_model = 1600
+    num_layers = 48
+    d_ff = 6400
+    num_heads = 25
     rope_theta = 10000
 
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
@@ -103,7 +103,7 @@ if __name__ == '__main__':
                                           batch_size), 
              nprocs=world_size, join=True)
     
-    print("training og")
+    print("training og --- check results match!")
 
     model.to(device)
 

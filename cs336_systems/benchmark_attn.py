@@ -104,7 +104,12 @@ if __name__ == '__main__':
     parser.add_argument("--compile", type=int, default=0)
     args = parser.parse_args()
 
-    df = {'model dim': [], 'seq len': [], 'forward time (ms)': [], 'backward time (ms)': [], 'peak memory': []}
+    df = {}
+
+    if args.compile == 0:
+        df = {'model dim': [], 'seq len': [], 'forward time (ms)': [], 'backward time (ms)': [], 'peak memory': []}
+    elif args.compile == 1:
+        df = {'model dim': [], 'seq len': [], 'forward time (ms)': [], 'backward time (ms)': []}
 
     dims = [1024, 2048, 4096, 8192]
     context_lens = [1024, 2048, 4096, 8192, 16384]
@@ -116,14 +121,17 @@ if __name__ == '__main__':
             if args.compile == 0:
                 ft, bt, fm = pytorch_attn(8, dim, context_len)
             elif args.compile == 1:
-                ft, bt, fm = pytorch_compiled_attn(8, dim, context_len)
+                ft, bt = pytorch_compiled_attn(8, dim, context_len)
 
             df['model dim'].append(dim)
             df['seq len'].append(context_len)
             df['forward time (ms)'].append(1000 * ft)
             df['backward time (ms)'].append(1000 * bt)
-            df['peak memory'].append(fm / (1024*1024))
-            print(1000 * ft, 1000 * bt, fm / (1024*1024))
+
+            if args.compile == 0:
+                df['peak memory'].append(fm / (1024*1024))
+            
+            print(1000 * ft, 1000 * bt)
             # except: 
             #     df['model dim'].append(dim)
             #     df['seq len'].append(context_len)

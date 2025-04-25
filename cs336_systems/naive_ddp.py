@@ -6,6 +6,7 @@ import torch.multiprocessing as mp
 import timeit 
 import pandas as pd 
 import numpy as np 
+import argparse
 
 from cs336_basics.model import BasicsTransformerLM 
 from cs336_basics.nn_utils import cross_entropy
@@ -18,7 +19,7 @@ def setup(rank, world_size):
 def cleanup():
     dist.destroy_process_group()
 
-def data_parallelism_main(rank, world_size, data_in, data_targ, weights, 
+def ddp_naive_main(rank, world_size, data_in, data_targ, weights, 
                           vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, batch_size, 
                           state_dicts, step_times, grad_collect_times):
     # torch.cuda.set_device(rank)
@@ -163,7 +164,6 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
 
         unflat_grads = torch._utils._unflatten_dense_tensors(flat_grads, [tensor for tensor in param_list.values()])
         # print(unflattened[:4])
-        new_state_dict = {}
         for param, tensor in zip(model.parameters(), unflat_grads):
             # new_state_dict[key] = tensor
             param.grad = tensor
@@ -191,6 +191,10 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
     cleanup()
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--flat", type=bool, default=False)
+    args = parser.parse_args()
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     world_size = 2
 
@@ -216,11 +220,18 @@ if __name__ == '__main__':
     step_times = manager.list()
     grad_collect_times = manager.list()
 
-    mp.spawn(ddp_flat_main, args=(world_size,data_in, data_targ, model.state_dict(),
-                                          vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
-                                          batch_size,
-                                          state_dicts, step_times, grad_collect_times), 
-             nprocs=world_size, join=True)
+    if args.flat == False:
+        mp.spawn(ddp_naive_main, args=(world_size,data_in, data_targ, model.state_dict(),
+                                            vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
+                                            batch_size,
+                                            state_dicts, step_times, grad_collect_times), 
+                nprocs=world_size, join=True)
+    else:
+        mp.spawn(ddp_flat_main, args=(world_size,data_in, data_targ, model.state_dict(),
+                                            vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
+                                            batch_size,
+                                            state_dicts, step_times, grad_collect_times), 
+                nprocs=world_size, join=True)
     
     print('step')
     print(np.mean(step_times))

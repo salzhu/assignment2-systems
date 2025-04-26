@@ -8,7 +8,7 @@ import argparse
 
 from flash_attention import FlashAttentionTriton
 
-def flash_attn_triton(dim, seq_len, Q_TILE_SIZE, K_TILE_SIZE, dtype, n=100, w=10):
+def flash_attn_triton(dim, seq_len, dtype, n=100, w=10):
     # make the attention module 
     # make random inputs Q, K, V of size batch_size x seq_len x dim 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

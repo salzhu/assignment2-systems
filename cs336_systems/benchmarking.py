@@ -54,6 +54,55 @@ def end_to_end_benchmark(model, data, w, n, cast=False, dtype=torch.float32):
 
     return forward_pass_time, backward_pass_time
 
+def end_to_end_benchmark_optimizer(model, data, w, n, cast=False, dtype=torch.float32):
+
+    forward_pass_time = []
+    backward_pass_time = []
+    full_time = []
+    optimizer = AdamW(
+        model.parameters()
+    )
+
+    cm = torch.autocast(device_type='cuda',dtype=dtype) if cast else nullcontext()
+
+    with cm:
+
+        torch.cuda.synchronize()
+
+        # all run on the same batch of (pre-generated) data
+
+        # w warmup steps, no timing
+        for i in range(w):
+            preds = model(data)
+            torch.cuda.synchronize()
+            preds.mean().backward()
+            torch.cuda.synchronize()
+            optimizer.step()
+            torch.cuda.synchronize()
+
+        # n steps, timed 
+        for i in range(n):
+
+            start = timeit.default_timer()
+            # forward pass of model on data 
+            preds = model(data)
+            torch.cuda.synchronize()
+            end = timeit.default_timer()
+
+            # backward pass on predictions
+            preds.mean().backward()
+            backward_pass_time.append(timeit.default_timer() - end)
+            torch.cuda.synchronize()
+            forward_pass_time.append(end - start)
+
+            optimizer.step()
+            torch.cuda.synchronize()
+            full_time.append(timeit.default_timer() - start)
+
+            torch.cuda.synchronize()
+
+    return forward_pass_time, backward_pass_time, full_time
+
 def run_end_to_end_benchmark(batch_size, vocab_size, context_length, d_model, n_layers, n_heads, d_ff, rope_theta, warmup_its, time_its, cast=False, dtype=torch.float32):
     # initialize transformer model
     model = BasicsTransformerLM(
@@ -75,6 +124,29 @@ def run_end_to_end_benchmark(batch_size, vocab_size, context_length, d_model, n_
 
     return np.mean(forward_pass_time), np.std(forward_pass_time), np.mean(backward_pass_time), np.std(backward_pass_time)
 
+def run_end_to_end_benchmark_compiled(batch_size, vocab_size, context_length, d_model, n_layers, n_heads, d_ff, rope_theta, warmup_its, time_its, cast=False, dtype=torch.float32):
+    # initialize transformer model
+    model = BasicsTransformerLM(
+        vocab_size, context_length, d_model, n_layers, n_heads, d_ff, rope_theta
+    )
+    model = torch.compile(model)
+
+    # generate random batch of data
+    # default: batch size of 4, vocab size of 10000
+    batch = torch.randint(low=0, high=vocab_size, size=(batch_size, context_length))
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
+    batch.to(device)
+
+    forward_pass_time, backward_pass_time, full_time = end_to_end_benchmark(model, batch, warmup_its, time_its, cast=cast, dtype=dtype)
+
+    print(f'forward pass timing stats | mean {np.mean(forward_pass_time)}s ')
+    print(f'backward pass timing stats | mean {np.mean(backward_pass_time)}s ')
+    print(f'full step timing stats | mean {np.mean(full_time)}s ')
+
+    return np.mean(forward_pass_time), np.mean(backward_pass_time), np.mean(full_time)
+
 def memory_profiling(name, batch_size, vocab_size, context_length, d_model, n_layers, n_heads, d_ff, rope_theta, warmup_its, n_steps, full_step=True, cast=False, dtype=torch.float32):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -87,9 +159,9 @@ def memory_profiling(name, batch_size, vocab_size, context_length, d_model, n_la
     )
     model.to(device)
     batch = torch.randint(low=0, high=vocab_size, size=(batch_size, context_length), device=device)
-    # optimizer = AdamW(
-    #     model.parameters()
-    # )
+    optimizer = AdamW(
+        model.parameters()
+    )
     torch.cuda.synchronize()
 
     # warm-up phase in your benchmarking script
@@ -104,12 +176,12 @@ def memory_profiling(name, batch_size, vocab_size, context_length, d_model, n_la
 
         # w warmup steps, no timing
         for i in range(warmup_its):
-            # optimizer.zero_grad()
+            optimizer.zero_grad()
             preds = model(batch)
             torch.cuda.synchronize()
-            # preds.mean().backward()
-            # optimizer.step()
-            # torch.cuda.synchronize()
+            preds.mean().backward()
+            optimizer.step()
+            torch.cuda.synchronize()
 
         # n steps, timed 
 
@@ -118,14 +190,14 @@ def memory_profiling(name, batch_size, vocab_size, context_length, d_model, n_la
         for i in range(n_steps):
 
             # forward pass of model on data 
-            # optimizer.zero_grad()
+            optimizer.zero_grad()
             preds = model(batch)
             torch.cuda.synchronize()
 
             # backward pass on predictions
-            # preds.mean().backward()
-            # optimizer.step()
-            # torch.cuda.synchronize()
+            preds.mean().backward()
+            optimizer.step()
+            torch.cuda.synchronize()
 
     # Save a pickle file to be loaded by PyTorch's online tool.
     torch.cuda.memory._dump_snapshot(f"{name}.pickle")

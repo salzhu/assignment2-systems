@@ -3,7 +3,7 @@ import argparse
 import pandas as pd 
 from torch.profiler import profile
 
-from benchmarking import run_end_to_end_benchmark, memory_profiling
+from benchmarking import run_end_to_end_benchmark, memory_profiling, run_end_to_end_benchmark_compiled
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--part", type=str, default='1.1.3')
@@ -135,7 +135,7 @@ def part_1_1_6():
     for context_len in context_lens:
         for model in models:
             print(f'running model {model}_{context_len}')
-            memory_profiling(f'{model}_{context_len}_forward_mixed',
+            memory_profiling(f'{model}_{context_len}',
                              4, 10000, context_len, 
                              model_list[model]['d_model'], 
                              model_list[model]['n_layers'], 
@@ -145,6 +145,44 @@ def part_1_1_6():
                              args.full_step, cast=args.cast, dtype=dtype)
 
 
+def part_1_3(): 
+
+    """
+    command to run: 
+    uv run cs336_systems/experiments.py --warmup_its 5
+    """
+
+    df = {'model': [], 'context len': [], 'forward (ms)': [], 'backward (ms)': [], 'full step (ms)': []}
+
+    context_lens = [128, 256, 512, 1024]
+    models = ['small', 'medium', 'large', 'xl', '2.7B']
+    
+    for context_len in context_lens:
+        for model in models: 
+            try: 
+                forward, backward, full = run_end_to_end_benchmark_compiled(4, 10000, context_len, 
+                                        model_list[model]['d_model'], 
+                                        model_list[model]['n_layers'], 
+                                        model_list[model]['n_heads'], 
+                                        model_list[model]['d_ff'], 10000, 
+                                        args.warmup_its, args.time_its,
+                                        cast=args.cast,
+                                        dtype=args.dtype)
+                df['model'].append(model)
+                df['context len'].append(context_len)
+                df['forward (ms)'].append(1000 * forward)
+                df['backward (ms)'].append(1000 * backward)
+                df['full step (ms)'].append(1000 * full)
+            except: 
+                df['model'].append(model)
+                df['context len'].append(context_len)
+                df['forward (ms)'].append(1000 * forward)
+                df['backward (ms)'].append(1000 * backward)
+                df['full step (ms)'].append(1000 * full)
+
+    df = pd.DataFrame(df)
+    print(df.to_latex(index=False))
+
 if __name__ == '__main__': 
     if args.part == '1.1.3':
         part_1_1_3()
@@ -152,3 +190,5 @@ if __name__ == '__main__':
         part_1_1_5()
     elif args.part == '1.1.6':
         part_1_1_6()
+    elif args.part == '1.3':
+        part_1_3()

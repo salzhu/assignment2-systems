@@ -28,7 +28,7 @@ def flash_attn_triton(dim, seq_len, dtype, n=100, w=10):
         torch.cuda.synchronize()
 
         start_time = timeit.default_timer()
-        out = attn.apply(Q_TILE_SIZE, K_TILE_SIZE, rand_Q, rand_K, rand_V, True)
+        out = attn.apply(rand_Q, rand_K, rand_V, True)
         # print(out)
         # print(torch.sum(out, [0,1,2]))
         torch.cuda.synchronize()

@@ -69,7 +69,7 @@ if __name__ == '__main__':
     for dtype in dtypes: 
         for dim in dims:
             for context_len in context_lens: 
-                print(f'dim {dim} len {context_len}...', end=' ')
+                print(f'dim {dim} len {context_len} dtype {dtype}...', end=' ')
                 # try: 
                 # if args.triton == 1:
                 #     ft, bt, fm = pytorch_attn(8, dim, context_len)

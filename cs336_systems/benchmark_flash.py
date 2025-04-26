@@ -16,6 +16,7 @@ def flash_attn_triton(dim, seq_len, Q_TILE_SIZE, K_TILE_SIZE, dtype, n=100, w=10
     rand_Q = torch.randn(1, seq_len, dim, dtype=dtype, device=device, requires_grad=True)
     rand_K = torch.randn(1, seq_len, dim, dtype=dtype, device=device, requires_grad=True)
     rand_V = torch.randn(1, seq_len, dim, dtype=dtype, device=device, requires_grad=True)
+    rand_dO = torch.randn(1, seq_len, dim, dtype=dtype, device=device, requires_grad=True)
 
     forward_time = []
     backward_time = []
@@ -32,8 +33,10 @@ def flash_attn_triton(dim, seq_len, Q_TILE_SIZE, K_TILE_SIZE, dtype, n=100, w=10
         # print(torch.sum(out, [0,1,2]))
         torch.cuda.synchronize()
         mid_time = timeit.default_timer()
+
+        out.backward(rand_dO)
                 
-        torch.sum(out, [0,1,2]).backward()
+        # torch.sum(out, [0,1,2]).backward()
         torch.cuda.synchronize()
         end_time = timeit.default_timer()
 

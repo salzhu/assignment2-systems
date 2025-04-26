@@ -148,18 +148,6 @@ class FlashAttentionTorch(torch.autograd.Function):
         Q, K, V, O, L = ctx.saved_tensors
         return compiled_backward(Q, K, V, O, dO, L, ctx.is_causal)
 
-
-# @triton.jit
-# def fill_diagonal(
-#     diag,            # the diagonal matrix (Triton tensor)
-#     values,          # values to fill the diagonal with (Triton tensor)
-#     N,               # size of the square matrix
-# ):
-#     # Iterate over the diagonal
-#     for i in range(N):
-#         # Set the value on the diagonal
-#         diag[i, i] = values[i]
-
 @triton.jit
 def flash_fwd_kernel(
     Q_ptr, K_ptr, V_ptr,
@@ -299,7 +287,7 @@ def flash_fwd_kernel(
 
 class FlashAttentionTriton(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, Q, K, V, is_causal=False):
+    def forward(ctx, Q_TILE_SIZE, K_TILE_SIZE, Q, K, V, is_causal=False):
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -307,8 +295,8 @@ class FlashAttentionTriton(torch.autograd.Function):
         K.to(device)
         V.to(device)
 
-        Q_TILE_SIZE = 8
-        K_TILE_SIZE = 8
+        # Q_TILE_SIZE = 32
+        # K_TILE_SIZE = 16
 
         if len(Q.shape) == 2: Q = Q.unsqueeze(0)
         if len(K.shape) == 2: K = K.unsqueeze(0)

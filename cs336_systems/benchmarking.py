@@ -141,9 +141,7 @@ def run_end_to_end_benchmark_compiled(batch_size, vocab_size, context_length, d_
 
     forward_pass_time, backward_pass_time, full_time = end_to_end_benchmark_optimizer(model, batch, warmup_its, time_its, cast=cast, dtype=dtype)
 
-    print(f'forward pass timing stats | mean {np.mean(forward_pass_time)}s ')
-    print(f'backward pass timing stats | mean {np.mean(backward_pass_time)}s ')
-    print(f'full step timing stats | mean {np.mean(full_time)}s ')
+    print(f'{d_model} {context_length} | forward {np.mean(forward_pass_time)}s | backward {np.mean(backward_pass_time)}s | full step {np.mean(full_time)}s ')
 
     return np.mean(forward_pass_time), np.mean(backward_pass_time), np.mean(full_time)
 

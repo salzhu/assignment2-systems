@@ -21,13 +21,13 @@ def flash_attn_triton(dim, seq_len, Q_TILE_SIZE, K_TILE_SIZE, dtype, n=100, w=10
     backward_time = []
     full_time = []
 
-    attn = FlashAttentionTriton()
+    attn = FlashAttentionTriton
 
     for i in range(w + n):
         torch.cuda.synchronize()
 
         start_time = timeit.default_timer()
-        out = attn(Q_TILE_SIZE, K_TILE_SIZE, rand_Q, rand_K, rand_V, is_causal=True)
+        out = attn.apply(Q_TILE_SIZE, K_TILE_SIZE, rand_Q, rand_K, rand_V, is_causal=True)
         # print(out)
         # print(torch.sum(out, [0,1,2]))
         torch.cuda.synchronize()

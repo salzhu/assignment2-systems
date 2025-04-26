@@ -77,17 +77,17 @@ if __name__ == '__main__':
                 #     ft, bt = pytorch_compiled_attn(8, dim, context_len)
 
                 # use tile size of 16 for all
-                with torch.autocast(device_type='cuda',dtype=dtype):
-                    forward, backward, full = flash_attn_triton(dim, context_len, dtype)
+                # with torch.autocast(device_type='cuda',dtype=dtype):
+                forward, backward, full = flash_attn_triton(dim, context_len, dtype)
 
-                    df['model dim'].append(dim)
-                    df['seq len'].append(context_len)
-                    df['dtype'].append(str(dtype))
-                    df['forward time (ms)'].append(1000 * forward)
-                    df['backward time (ms)'].append(1000 * backward)
-                    df['full step time (ms)'].append(1000 * full)
+                df['model dim'].append(dim)
+                df['seq len'].append(context_len)
+                df['dtype'].append(str(dtype))
+                df['forward time (ms)'].append(1000 * forward)
+                df['backward time (ms)'].append(1000 * backward)
+                df['full step time (ms)'].append(1000 * full)
 
-                    print(1000 * forward, 1000 * backward)
+                print(1000 * forward, 1000 * backward)
                     # except: 
                     #     df['model dim'].append(dim)
                     #     df['seq len'].append(context_len)

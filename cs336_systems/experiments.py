@@ -176,9 +176,9 @@ def part_1_3():
             except: 
                 df['model'].append(model)
                 df['context len'].append(context_len)
-                df['forward (ms)'].append(1000 * forward)
-                df['backward (ms)'].append(1000 * backward)
-                df['full step (ms)'].append(1000 * full)
+                df['forward (ms)'].append('oom')
+                df['backward (ms)'].append('oom')
+                df['full step (ms)'].append('oom')
 
     df = pd.DataFrame(df)
     print(df.to_latex(index=False))

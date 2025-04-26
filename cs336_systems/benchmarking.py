@@ -139,7 +139,7 @@ def run_end_to_end_benchmark_compiled(batch_size, vocab_size, context_length, d_
     model.to(device)
     batch.to(device)
 
-    forward_pass_time, backward_pass_time, full_time = end_to_end_benchmark(model, batch, warmup_its, time_its, cast=cast, dtype=dtype)
+    forward_pass_time, backward_pass_time, full_time = end_to_end_benchmark_optimizer(model, batch, warmup_its, time_its, cast=cast, dtype=dtype)
 
     print(f'forward pass timing stats | mean {np.mean(forward_pass_time)}s ')
     print(f'backward pass timing stats | mean {np.mean(backward_pass_time)}s ')

@@ -64,6 +64,7 @@ if __name__ == '__main__':
     context_lens = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536]
     # context_lens = [128, 256, 1024, 4096, 16384, 65536]
     dtypes = [torch.float32, torch.bfloat16]
+    dtypes = [torch.bfloat16]
 
     for dtype in dtypes: 
         for dim in dims:
@@ -76,23 +77,24 @@ if __name__ == '__main__':
                 #     ft, bt = pytorch_compiled_attn(8, dim, context_len)
 
                 # use tile size of 16 for all
-                forward, backward, full = flash_attn_triton(dim, context_len, dtype)
+                with torch.autocast(device_type='cuda',dtype=dtype)
+                    forward, backward, full = flash_attn_triton(dim, context_len, dtype)
 
-                df['model dim'].append(dim)
-                df['seq len'].append(context_len)
-                df['dtype'].append(str(dtype))
-                df['forward time (ms)'].append(1000 * forward)
-                df['backward time (ms)'].append(1000 * backward)
-                df['full step time (ms)'].append(1000 * full)
+                    df['model dim'].append(dim)
+                    df['seq len'].append(context_len)
+                    df['dtype'].append(str(dtype))
+                    df['forward time (ms)'].append(1000 * forward)
+                    df['backward time (ms)'].append(1000 * backward)
+                    df['full step time (ms)'].append(1000 * full)
 
-                print(1000 * forward, 1000 * backward)
-                # except: 
-                #     df['model dim'].append(dim)
-                #     df['seq len'].append(context_len)
-                #     df['forward time (ms)'].append('oom')
-                #     df['backward time (ms)'].append('oom')
-                #     df['peak memory'].append('oom')
-                #     print('oom')
+                    print(1000 * forward, 1000 * backward)
+                    # except: 
+                    #     df['model dim'].append(dim)
+                    #     df['seq len'].append(context_len)
+                    #     df['forward time (ms)'].append('oom')
+                    #     df['backward time (ms)'].append('oom')
+                    #     df['peak memory'].append('oom')
+                    #     print('oom')
 
         df = pd.DataFrame(df)
         print(df.to_latex(index=False))

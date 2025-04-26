@@ -77,7 +77,7 @@ if __name__ == '__main__':
                 #     ft, bt = pytorch_compiled_attn(8, dim, context_len)
 
                 # use tile size of 16 for all
-                with torch.autocast(device_type='cuda',dtype=dtype)
+                with torch.autocast(device_type='cuda',dtype=dtype):
                     forward, backward, full = flash_attn_triton(dim, context_len, dtype)
 
                     df['model dim'].append(dim)

@@ -287,7 +287,7 @@ def flash_fwd_kernel(
 
 class FlashAttentionTriton(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, Q_TILE_SIZE, K_TILE_SIZE, Q, K, V, is_causal=False):
+    def forward(ctx, Q, K, V, is_causal=False):
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -295,8 +295,8 @@ class FlashAttentionTriton(torch.autograd.Function):
         K.to(device)
         V.to(device)
 
-        # Q_TILE_SIZE = 32
-        # K_TILE_SIZE = 16
+        Q_TILE_SIZE = 16
+        K_TILE_SIZE = 16
 
         if len(Q.shape) == 2: Q = Q.unsqueeze(0)
         if len(K.shape) == 2: K = K.unsqueeze(0)

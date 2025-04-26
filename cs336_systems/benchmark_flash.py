@@ -76,7 +76,7 @@ if __name__ == '__main__':
                 #     ft, bt = pytorch_compiled_attn(8, dim, context_len)
 
                 # use tile size of 16 for all
-                forward, backward, full = flash_attn_triton(dim, context_len, 16, 16, dtype)
+                forward, backward, full = flash_attn_triton(dim, context_len, dtype)
 
                 df['model dim'].append(dim)
                 df['seq len'].append(context_len)

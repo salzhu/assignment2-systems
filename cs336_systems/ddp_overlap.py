@@ -24,6 +24,9 @@ class DDPIndividualParameters(torch.nn.Module):
         # if module.device == 'cuda:0':
         #     rank = 1
 
+        self.handles = []
+        self.module = module
+
         for param in self.module.parameters():
             if param.device == 'cuda:0':
                 for dst in range(1, 2):
@@ -32,8 +35,7 @@ class DDPIndividualParameters(torch.nn.Module):
             else:
                 dist.recv(tensor=param, src=0)
 
-        self.handles = []
-        self.module = module
+        
 
         # print('------------------------------------------------')
         # print(self.module.parameters())

@@ -15,15 +15,22 @@ class DDPIndividualParameters(torch.nn.Module):
         # broadcast weights before training 
         # register a bunch of hooks on each param where the function is an all reduce
 
-        # rank = 0 
+        rank = 0 
         # if module.device == 'cuda'
 
-        # if rank == 0:
-        #     for dst in range(1, size):
-        #         dist.send(tensor=tensor + dst, dst=dst)
-        #         print(f"Rank {rank} sent data {tensor[0] + dst} to rank {dst}")
-        # else:
-        #     dist.recv(tensor=tensor, src=0)
+        print('DEVICE DEVICE')
+        print(module.device)
+
+        if module.device == 'cuda:0':
+            rank = 1
+
+        for param in self.module.parameters():
+            if rank == 0:
+                for dst in range(1, 2):
+                    dist.send(tensor=param, dst=dst)
+                    print(f"Rank {rank} sent data  to rank {dst}")
+            else:
+                dist.recv(tensor=param, src=0)
 
         self.handles = []
         self.module = module

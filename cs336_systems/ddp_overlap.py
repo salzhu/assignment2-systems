@@ -14,6 +14,14 @@ class DDPIndividualParameters(torch.nn.Module):
         super().__init__()
         # broadcast weights before training 
         # register a bunch of hooks on each param where the function is an all reduce
+
+        # if rank == 0:
+        #     for dst in range(1, size):
+        #         dist.send(tensor=tensor + dst, dst=dst)
+        #         print(f"Rank {rank} sent data {tensor[0] + dst} to rank {dst}")
+        # else:
+        #     dist.recv(tensor=tensor, src=0)
+
         self.handles = []
         self.module = module
 
@@ -24,7 +32,7 @@ class DDPIndividualParameters(torch.nn.Module):
         print('------------------------------------------------')
 
         for param in self.module.parameters():
-            print(param)
+            print(param.device)
             if param.requires_grad:
                 # reduce_handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)
                 handle = param.register_post_accumulate_grad_hook(lambda p: dist.all_reduce(tensor=p.grad, op=dist.ReduceOp.AVG, async_op=True))

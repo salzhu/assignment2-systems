@@ -49,9 +49,7 @@ def _test_DistributedDataParallelIndividualParameters(rank: int, world_size: int
 
     # Create a toy model and move it to the proper device.
     # This is our non-parallel baseline.
-    print('***********************************')
-    print(device, rank)
-    print('***********************************')
+
     non_parallel_model = model_class().to(device)
 
     # Create a DDP model. Note that the weights of this model should
@@ -76,9 +74,15 @@ def _test_DistributedDataParallelIndividualParameters(rank: int, world_size: int
             assert torch.allclose(non_parallel_model_parameter, ddp_model_parameter)
         # else:
         #     assert not torch.allclose(non_parallel_model_parameter, ddp_model_parameter)
+        
+    for (non_parallel_param_name, non_parallel_model_parameter), (
+        ddp_model_param_name,
+        ddp_model_parameter,
+    ) in zip(non_parallel_model.named_parameters(), ddp_model.named_parameters()):
         print(non_parallel_model_parameter)
         print(ddp_model_parameter)
         print('****************************')
+        break
 
     # Make sure all the ranks have the same model state
     validate_ddp_net_equivalence(ddp_model)

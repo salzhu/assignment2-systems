@@ -45,7 +45,6 @@ class DDPIndividualParameters(torch.nn.Module):
         print('------------------------------------------------')
 
         for param in self.module.parameters():
-            print(param.device)
             if param.requires_grad:
                 # handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)
                 # handle = param.register_post_accumulate_grad_hook(lambda p: dist.all_reduce(tensor=p.grad, op=dist.ReduceOp.AVG, async_op=True))
@@ -53,7 +52,6 @@ class DDPIndividualParameters(torch.nn.Module):
                 # handle = param.register_post_accumulate_grad_hook(hook)
                 # self.handles.append(handle)
                 param.register_post_accumulate_grad_hook(self.add_hook())
-                continue
 
         # raise NotImplementedError
     

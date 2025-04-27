@@ -86,6 +86,9 @@ def _setup_process_group(rank, world_size, backend):
         device = "cpu"
     # initialize the process group
     dist.init_process_group(backend, rank=rank, world_size=world_size)
+    print('@@@@@@@@@@@@@@@@@@@@')
+    print(device)
+    print('@@@@@@@@@@@@@@@@@@@@')
     return device
 
 

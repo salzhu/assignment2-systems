@@ -21,11 +21,11 @@ class DDPIndividualParameters(torch.nn.Module):
         print('DEVICE DEVICE')
         print(module.device)
 
-        if module.device == 'cuda:0':
-            rank = 1
+        # if module.device == 'cuda:0':
+        #     rank = 1
 
         for param in self.module.parameters():
-            if rank == 0:
+            if param.device == 'cuda:0':
                 for dst in range(1, 2):
                     dist.send(tensor=param, dst=dst)
                     print(f"Rank {rank} sent data  to rank {dst}")

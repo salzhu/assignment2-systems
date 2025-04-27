@@ -59,8 +59,9 @@ class DDPIndividualParameters(torch.nn.Module):
     
     def add_hook(self):
         def hook(param):
-            handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)
+            handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.SUM, async_op=True)
             self.handles.append(handle)
+            param.grad /= 2
             # handle.wait()
             return None 
         return hook 

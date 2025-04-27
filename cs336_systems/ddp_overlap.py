@@ -28,6 +28,7 @@ class DDPIndividualParameters(torch.nn.Module):
         self.module = module
 
         for param in self.module.parameters():
+            print(param)
             if param.device == 'cuda:0':
                 for dst in range(1, 2):
                     dist.send(tensor=param, dst=dst)

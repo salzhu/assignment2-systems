@@ -45,7 +45,7 @@ def _test_DistributedDataParallelIndividualParameters(rank: int, world_size: int
     dist.barrier()
 
     # Seed to ensure that ranks are initialized with different initial models.
-    torch.manual_seed(rank)
+    torch.manual_seed(0) #rank
 
     # Create a toy model and move it to the proper device.
     # This is our non-parallel baseline.

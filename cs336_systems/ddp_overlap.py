@@ -24,7 +24,7 @@ class DDPIndividualParameters:
 
         for param in self.module.parameters():
             # reduce_handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)
-            handle = param.register_post_accumulate_grad_hook(dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True))
+            handle = param.register_post_accumulate_grad_hook(lambda dist: dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True))
             self.handles.append(handle)
 
         raise NotImplementedError

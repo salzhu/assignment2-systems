@@ -64,6 +64,6 @@ class DDPIndividualParameters(torch.nn.Module):
         raise NotImplementedError
     
     def finish_gradient_synchronization(self):
-        for handle in self.handles:
-            handle.wait()
+        # for handle in self.handles:
+        #     handle.wait()
         self.handles.clear()

@@ -8,10 +8,6 @@ import pandas as pd
 import numpy as np 
 import argparse
 
-def hook(param):
-    handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)
-    # handle.wait()
-
 class DDPIndividualParameters(torch.nn.Module):
 
     def __init__(self, module: torch.nn.Module):
@@ -56,16 +52,22 @@ class DDPIndividualParameters(torch.nn.Module):
                 # param.register_post_accumulate_grad_hook(lambda p: dist.all_reduce(tensor=p.grad, op=dist.ReduceOp.AVG, async_op=True))
                 # handle = param.register_post_accumulate_grad_hook(hook)
                 # self.handles.append(handle)
-                param.register_post_accumulate_grad_hook(hook)
+                param.register_post_accumulate_grad_hook(self.hook())
                 continue
 
         # raise NotImplementedError
+    
+    def hook(self, param):
+        handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)
+        self.handles.append(handle)
+        # handle.wait()
+        return None 
     
     def forward(self, *inputs, **kwargs):
         return self.module(*inputs, **kwargs)
         raise NotImplementedError
     
     def finish_gradient_synchronization(self):
-        # for handle in self.handles:
-        #     handle.wait()
+        for handle in self.handles:
+            handle.wait()
         self.handles.clear()

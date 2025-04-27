@@ -8,6 +8,9 @@ import pandas as pd
 import numpy as np 
 import argparse
 
+def hook(param):
+    dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=False)
+
 class DDPIndividualParameters(torch.nn.Module):
 
     def __init__(self, module: torch.nn.Module):
@@ -49,8 +52,9 @@ class DDPIndividualParameters(torch.nn.Module):
             if param.requires_grad:
                 # handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)
                 # handle = param.register_post_accumulate_grad_hook(lambda p: dist.all_reduce(tensor=p.grad, op=dist.ReduceOp.AVG, async_op=True))
-                param.register_post_accumulate_grad_hook(lambda p: dist.all_reduce(tensor=p.grad, op=dist.ReduceOp.AVG, async_op=True))
-                # self.handles.append(handle)
+                # param.register_post_accumulate_grad_hook(lambda p: dist.all_reduce(tensor=p.grad, op=dist.ReduceOp.AVG, async_op=True))
+                handle = param.register_post_accumulate_grad_hook(hook)
+                self.handles.append(handle)
                 continue
 
         # raise NotImplementedError

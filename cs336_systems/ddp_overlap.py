@@ -74,3 +74,39 @@ class DDPIndividualParameters(torch.nn.Module):
                 param.grad.div_(2)
 
         self.handles.clear()
+
+class DDPOverlapBucketed(torch.nn.Module):
+
+    def __init__(self, module: torch.nn.Module):
+        super().__init__()
+
+        self.handles = []
+        self.module = module
+
+        for param in self.module.parameters():
+            dist.broadcast(tensor=param.data,src=0)
+
+        for param in self.module.parameters():
+            if param.requires_grad:
+                param.register_post_accumulate_grad_hook(self.add_hook())
+
+    
+    def add_hook(self):
+        def hook(param):
+            handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.SUM, async_op=True)
+            self.handles.append(handle)
+            return None 
+        return hook 
+    
+    def forward(self, *inputs, **kwargs):
+        return self.module(*inputs, **kwargs)
+    
+    def finish_gradient_synchronization(self):
+        for handle in self.handles:
+            handle.wait()
+
+        for param in self.module.parameters():
+            if param.requires_grad:
+                param.grad.div_(2)
+
+        self.handles.clear()

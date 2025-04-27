@@ -11,6 +11,7 @@ import argparse
 class DDPIndividualParameters(torch.nn.Module):
 
     def __init__(self, module: torch.nn.Module):
+        super().__init__()
         # broadcast weights before training 
         # register a bunch of hooks on each param where the function is an all reduce
         self.handles = []

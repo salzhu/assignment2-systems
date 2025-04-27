@@ -18,7 +18,6 @@ class DDPIndividualParameters(torch.nn.Module):
         rank = 0 
         # if module.device == 'cuda'
 
-        print('DEVICE DEVICE')
         # print(module.device)
 
         # if module.device == 'cuda:0':

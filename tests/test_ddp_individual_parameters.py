@@ -76,6 +76,9 @@ def _test_DistributedDataParallelIndividualParameters(rank: int, world_size: int
             assert torch.allclose(non_parallel_model_parameter, ddp_model_parameter)
         # else:
         #     assert not torch.allclose(non_parallel_model_parameter, ddp_model_parameter)
+        print(non_parallel_model_parameter)
+        print(ddp_model_parameter)
+        print('****************************')
 
     # Make sure all the ranks have the same model state
     validate_ddp_net_equivalence(ddp_model)

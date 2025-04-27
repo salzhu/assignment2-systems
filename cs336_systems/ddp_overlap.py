@@ -9,7 +9,7 @@ import numpy as np
 import argparse
 
 def hook(param):
-    dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=False)
+    dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)
 
 class DDPIndividualParameters(torch.nn.Module):
 

@@ -74,6 +74,7 @@ def _setup_process_group(rank, world_size, backend):
     # https://discuss.pytorch.org/t/should-local-rank-be-equal-to-torch-cuda-current-device/150873/2
     if torch.cuda.is_available():
         device_count = torch.cuda.device_count()
+        print(f'device count {device_count}')
         local_rank = None
         if device_count > 0:
             local_rank = rank % device_count

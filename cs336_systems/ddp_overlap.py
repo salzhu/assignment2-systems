@@ -27,7 +27,7 @@ class DDPIndividualParameters:
             handle = param.register_post_accumulate_grad_hook(lambda dist: dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True))
             self.handles.append(handle)
 
-        raise NotImplementedError
+        # raise NotImplementedError
     
     def forward(self, *inputs, **kwargs):
         return self.module(*inputs, **kwargs)

@@ -72,8 +72,9 @@ def ddp_individual_parameters_on_after_backward(ddp_model: torch.nn.Module, opti
             Optimizer being used with the DDP-wrapped model.
     """
     ddp_model.finish_gradient_synchronization() 
+    return 
     # For example: ddp_model.finish_gradient_synchronization()
-    raise NotImplementedError
+    # raise NotImplementedError
 
 
 def get_ddp_bucketed(module: torch.nn.Module, bucket_size_mb: float) -> torch.nn.Module:

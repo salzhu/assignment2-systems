@@ -10,7 +10,7 @@ import argparse
 
 def hook(param):
     handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)
-    handle.wait()
+    # handle.wait()
 
 class DDPIndividualParameters(torch.nn.Module):
 

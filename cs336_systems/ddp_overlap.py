@@ -41,7 +41,7 @@ class DDPIndividualParameters(torch.nn.Module):
         # print(self.module.parameters())
         # for param in self.module.parameters():
         #     print(param.grad)
-        print('------------------------------------------------')
+        # print('------------------------------------------------')
 
         for param in self.module.parameters():
             if param.requires_grad:

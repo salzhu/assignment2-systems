@@ -72,21 +72,8 @@ def _test_DistributedDataParallelIndividualParameters(rank: int, world_size: int
         )
         if rank == 0 or is_no_grad_fixed_param:
             assert torch.allclose(non_parallel_model_parameter, ddp_model_parameter)
-        # else:
+        # else: problem
         #     assert not torch.allclose(non_parallel_model_parameter, ddp_model_parameter)
-        
-    count = 0 
-    for (non_parallel_param_name, non_parallel_model_parameter), (
-        ddp_model_param_name,
-        ddp_model_parameter,
-    ) in zip(non_parallel_model.named_parameters(), ddp_model.named_parameters()):
-        print('pre')
-        print(non_parallel_model_parameter)
-        print(ddp_model_parameter)
-        print('----')
-        count += 1
-        if count == 2:
-            break
 
     # Make sure all the ranks have the same model state
     validate_ddp_net_equivalence(ddp_model)
@@ -156,10 +143,6 @@ def _test_DistributedDataParallelIndividualParameters(rank: int, world_size: int
             for non_parallel_model_parameter, ddp_model_parameter in zip(
                 non_parallel_model.parameters(), ddp_model.parameters()
             ):
-                print('post')
-                print(non_parallel_model_parameter)
-                print(ddp_model_parameter)
-                print('---')
                 assert torch.allclose(non_parallel_model_parameter, ddp_model_parameter)
 
         # Shuffle the data so that during the next iteration, each DDP rank sees a different set of inputs.

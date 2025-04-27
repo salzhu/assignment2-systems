@@ -17,13 +17,14 @@ class DDPIndividualParameters(torch.nn.Module):
         self.handles = []
         self.module = module
 
-        print('------------------------------------------------')
-        print(self.module.parameters())
-        for param in self.module.parameters():
-            print(param.grad)
+        # print('------------------------------------------------')
+        # print(self.module.parameters())
+        # for param in self.module.parameters():
+        #     print(param.grad)
         print('------------------------------------------------')
 
         for param in self.module.parameters():
+            print(param)
             # reduce_handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True)
             handle = param.register_post_accumulate_grad_hook(lambda dist: dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=True))
             self.handles.append(handle)

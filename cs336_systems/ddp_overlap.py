@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np 
 import argparse
 
-class DDPIndividualParameters:
+class DDPIndividualParameters(torch.nn.Module):
 
     def __init__(self, module: torch.nn.Module):
         # broadcast weights before training 

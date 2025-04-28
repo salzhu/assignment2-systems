@@ -35,9 +35,9 @@ class _FC2(nn.Module):
 class ToyModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc1 = nn.Linear(10, 5, bias=False) # 10,10
-        # self.fc2 = _FC2()
-        # self.fc3 = nn.Linear(50, 5, bias=False)
+        self.fc1 = nn.Linear(10, 10, bias=False) 
+        self.fc2 = _FC2()
+        self.fc3 = nn.Linear(50, 5, bias=False)
         self.relu = nn.ReLU()
         self.no_grad_fixed_param = nn.Parameter(torch.tensor([2.0, 2.0]), requires_grad=False)
 

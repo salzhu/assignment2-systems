@@ -51,6 +51,8 @@ class OptimizerSharded(torch.optim.Optimizer):
         self.params_list_1 = []
 
         cur_count = 0 
+        print("total params")
+        print(total_params)
 
         for param in params:
             if param.requires_grad:
@@ -71,6 +73,9 @@ class OptimizerSharded(torch.optim.Optimizer):
             self.opt = optimizer_cls(
                 self.params_list_1, **kwargs
             )
+
+        print(self.params_list_0)
+        print(self.params_list_1)
 
         # raise NotImplementedError
     

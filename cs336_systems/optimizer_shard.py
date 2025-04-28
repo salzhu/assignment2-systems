@@ -39,11 +39,11 @@ class OptimizerSharded(torch.optim.Optimizer):
         self.opt = None 
         if self.rank == 0: 
             self.opt = optimizer_cls(
-                params[:self.index], kwargs
+                params[:self.index], **kwargs
             )
         elif self.rank == 1:
             self.opt = optimizer_cls(
-                params[self.index:], kwargs
+                params[self.index:], **kwargs
             )
 
         # params_list_0 = []

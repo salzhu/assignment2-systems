@@ -70,7 +70,7 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
         end_time_step = timeit.default_timer()
         
         params = ddp_model.state_dict()
-        print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, params = {params['layers.1.ln1.weight']}", flush=True)
+        print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, ", flush=True)
 
         if step >= warmup_steps: 
             step_times.append(end_time_step - start_time_step)

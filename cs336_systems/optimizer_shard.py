@@ -34,6 +34,8 @@ class OptimizerSharded(torch.optim.Optimizer):
                 print('getting here')
                 total_params += np.prod(param.data.shape)
 
+        # self.param_groups
+
         # cur_count = 0 
         # self.index = 0 
         # for param in params:
@@ -89,6 +91,8 @@ class OptimizerSharded(torch.optim.Optimizer):
 
         print(self.params_list_0)
         print(self.params_list_1)
+
+        self.param_groups = self.opt.param_groups
 
         # raise NotImplementedError
     

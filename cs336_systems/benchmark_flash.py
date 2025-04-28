@@ -48,8 +48,11 @@ def pytorch_attn(batch_size, dim, seq_len, dtype, n=100, w=10):
             forward_time.append(mid_time - start_time)
             backward_time.append(end_time - mid_time)
             full_time.append(end_time - start_time)
+        del out 
+        torch.cuda.empty_cache()
 
-
+    del rand_Q, rand_K, rand_V, attn
+    torch.cuda.empty_cache()
     return np.mean(forward_time), np.mean(backward_time), np.mean(full_time)
 
 def flash_attn_triton(dim, seq_len, dtype, n=100, w=10):
@@ -103,7 +106,7 @@ if __name__ == '__main__':
         16,
         32,
         64,
-        # 128
+        128
     ]
     context_lens = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536]
     # context_lens = [128, 256, 1024, 4096, 16384, 65536]

@@ -53,10 +53,10 @@ def all_reduce(rank, world_size, tensor, result):
         print(f"[all_reduce] Rank {rank}: all_reduce(world_size={world_size}) took {duration}", flush=True)
         durations.append(duration)
     
-    all_times = [torch.empty(1,device='cuda') for _ in range(world_size)]
+    all_times = [torch.empty(1,device='cuda',dtype=torch.float32) for _ in range(world_size)]
     # all_times = [torch.empty(1) for _ in range(world_size)]
     
-    dist.all_gather(tensor_list=all_times, tensor=torch.tensor([torch.mean(durations)]).cuda(rank), async_op=False)
+    dist.all_gather(tensor_list=all_times, tensor=torch.tensor([np.mean(durations)],dtype=torch.float32).cuda(rank), async_op=False)
     # dist.all_gather(tensor_list=all_times, tensor=torch.tensor([duration]), async_op=False)
     
     result.append(np.mean([time.cpu() for time in all_times]))

@@ -31,10 +31,13 @@ if __name__ == '__main__':
     num_heads = 25
     rope_theta = 10000
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
+    model.to(device)
     ddp_model = DDPIndividualParameters(model)
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
     inputs = torch.randint(0,vocab_size,(1, batch_size, context_length), device=device)
     targets = torch.randint(0,vocab_size,(1, batch_size, context_length), device=device)
 
@@ -51,6 +54,7 @@ if __name__ == '__main__':
         
         loss = cross_entropy(outputs, targets)
         loss.backward()
+        ddp_model.finish_gradient_synchronization() 
         optimizer.step()
         torch.cuda.synchronize()
 

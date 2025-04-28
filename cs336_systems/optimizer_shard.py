@@ -29,6 +29,7 @@ class OptimizerSharded(torch.optim.Optimizer):
             if param.device == 'cuda:1':
                 self.rank = 1
             if param.requires_grad:
+                print('getting here')
                 total_params += np.prod(param.data.shape)
 
         # cur_count = 0 

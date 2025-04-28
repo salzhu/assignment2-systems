@@ -5,7 +5,7 @@ from typing import Type
 import torch
 
 from cs336_systems.flash_attention import FlashAttentionTorch, FlashAttentionTriton
-from cs336_systems.ddp_overlap import DDPIndividualParameters
+from cs336_systems.ddp_overlap import DDPIndividualParameters, DDPOverlapBucketed
 
 def get_flashattention_autograd_function_pytorch() -> Type:
     """
@@ -95,7 +95,7 @@ def get_ddp_bucketed(module: torch.nn.Module, bucket_size_mb: float) -> torch.nn
     Returns:
         Instance of a DDP class.
     """
-    return DDPIndividualParameters(module)
+    return DDPOverlapBucketed(module, bucket_size_mb)
     raise NotImplementedError
 
 

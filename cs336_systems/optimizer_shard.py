@@ -65,11 +65,11 @@ class OptimizerSharded(torch.optim.Optimizer):
 
         if self.rank == 0: 
             self.opt = optimizer_cls(
-                self.params_list_0, kwargs
+                self.params_list_0, **kwargs
             )
         elif self.rank == 1:
             self.opt = optimizer_cls(
-                self.params_list_1, kwargs
+                self.params_list_1, **kwargs
             )
 
         # raise NotImplementedError

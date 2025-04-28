@@ -14,7 +14,7 @@ class Attention(nn.Module):
     def forward(self, Q, K, V):
         return scaled_dot_product_attention(Q, K, V)
 
-def pytorch_attn(batch_size, dim, seq_len, dtype, n=100, w=10):
+def pytorch_attn(batch_size, dim, seq_len, dtype, n=100, w=30):
     # make the attention module 
     # make random inputs Q, K, V of size batch_size x seq_len x dim 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -48,11 +48,11 @@ def pytorch_attn(batch_size, dim, seq_len, dtype, n=100, w=10):
             forward_time.append(mid_time - start_time)
             backward_time.append(end_time - mid_time)
             full_time.append(end_time - start_time)
-        del out 
-        torch.cuda.empty_cache()
+        # del out 
+        # torch.cuda.empty_cache()
 
-    del rand_Q, rand_K, rand_V, attn
-    torch.cuda.empty_cache()
+    # del rand_Q, rand_K, rand_V, attn
+    # torch.cuda.empty_cache()
     return np.mean(forward_time), np.mean(backward_time), np.mean(full_time)
 
 def flash_attn_triton(dim, seq_len, dtype, n=100, w=10):

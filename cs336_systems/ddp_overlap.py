@@ -101,47 +101,80 @@ class DDPOverlapBucketed(torch.nn.Module):
         # send at most bucket MB of gradients at a time 
         self.param_buckets = []
 
-        # cur_count = 0 
-        # cur_list = []
-        # index = 0 
+        cur_count = 0 
+        cur_list = []
+        index = 0 
 
-        # for i in range(len(list(self.module.parameters()))):
+        # for i in range(len(list(self.module.parameters())) - 1):
         #     param = list(self.module.parameters())[i]
         #     if param.requires_grad:
         #         cur_count += np.prod(param.data.shape)
         #         cur_list.append(index)
-
+            
+        #     next_param = list(self.module.parameters())[i + 1]
+        #     if np.prod(next_param.data.shape) + cur_count > self.n_floats: 
+        #         # attach hooks 
+        #         self.param_buckets.append(cur_list)
+        #         cur_list = []
+        #         previous_param.register_post_accumulate_grad_hook(self.add_hook(len(self.param_buckets) - 1))
+        #         previous_param = param
+            
         #     if cur_count + np.prod(param.data.shape)
 
         cur_count = 0 
-        cur_list = [0]
+        cur_list = []
         index = 0 
-        previous_param = None 
-        for param in self.module.parameters():
-            if param.requires_grad:
-                previous_param = param
-                break 
+        last_param = None
 
         for param in self.module.parameters():
             if param.requires_grad:
+                last_param = param
+                cur_count += np.prod(param.data.shape)
+                cur_list.append(index)
 
-                if cur_count + np.prod(param.data.shape) >= self.n_floats:
+                if cur_count >= self.n_floats:
                     self.param_buckets.append(cur_list)
                     cur_list = []
 
                     # add a hook 
-                    previous_param.register_post_accumulate_grad_hook(self.add_hook(len(self.param_buckets) - 1))
-                    previous_param = param
+                    param.register_post_accumulate_grad_hook(self.add_hook(len(self.param_buckets) - 1))
                     cur_count = 0 
 
-                cur_count += np.prod(param.data.shape)
-
-                if index != 0:
-                    cur_list.append(index)
                 index += 1
 
         self.param_buckets.append(cur_list)
-        previous_param.register_post_accumulate_grad_hook(self.add_hook(len(self.param_buckets) - 1))
+        last_param.register_post_accumulate_grad_hook(self.add_hook(len(self.param_buckets) - 1))
+
+
+        # cur_count = 0 
+        # cur_list = [0]
+        # index = 0 
+        # previous_param = None 
+        # for param in self.module.parameters():
+        #     if param.requires_grad:
+        #         previous_param = param
+        #         break 
+
+        # for param in self.module.parameters():
+        #     if param.requires_grad:
+
+        #         if cur_count + np.prod(param.data.shape) >= self.n_floats:
+        #             self.param_buckets.append(cur_list)
+        #             cur_list = []
+
+        #             # add a hook 
+        #             previous_param.register_post_accumulate_grad_hook(self.add_hook(len(self.param_buckets) - 1))
+        #             previous_param = param
+        #             cur_count = 0 
+
+        #         cur_count += np.prod(param.data.shape)
+
+        #         if index != 0:
+        #             cur_list.append(index)
+        #         index += 1
+
+        # self.param_buckets.append(cur_list)
+        # previous_param.register_post_accumulate_grad_hook(self.add_hook(len(self.param_buckets) - 1))
 
         # pre-compute the buckets 
         # only add hooks to the appropriate ones 

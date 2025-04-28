@@ -191,7 +191,7 @@ class DDPOverlapBucketed(torch.nn.Module):
                 return None 
             flat_list = []
             index = 0 
-            print(param_ids)
+            # print(param_ids)
             for param in self.module.parameters():
                 if param.requires_grad:
                     if index in param_ids:
@@ -202,7 +202,6 @@ class DDPOverlapBucketed(torch.nn.Module):
             flat_grads = torch._utils._flatten_dense_tensors(flat_list)
             # all reduce
             handle = dist.all_reduce(tensor=flat_grads, op=dist.ReduceOp.SUM, async_op=True)
-            print('get here')
             # unflatten 
             unflat_grads = torch._utils._unflatten_dense_tensors(flat_grads, flat_list)
 

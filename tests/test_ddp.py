@@ -90,10 +90,6 @@ def _test_DistributedDataParallelCPU(
         ddp_model_param_name,
         ddp_model_parameter,
     ) in zip(non_parallel_model.named_parameters(), ddp_model.named_parameters()):
-        print('************************************************')
-        print(non_parallel_model_parameter)
-        print(ddp_model_parameter)
-        print('************************************************')
         # This parameter was initialized as [2, 2], so we expect its value to remain the same
         is_no_grad_fixed_param = (
             "no_grad_fixed_param" in ddp_model_param_name or "no_grad_fixed_param" in non_parallel_param_name
@@ -169,10 +165,6 @@ def _test_DistributedDataParallelCPU(
             for non_parallel_model_parameter, ddp_model_parameter in zip(
                 non_parallel_model.parameters(), ddp_model.parameters()
             ):
-                print('------------------------------------------------')
-                print(non_parallel_model_parameter)
-                print(ddp_model_parameter)
-                print('------------------------------------------------')
                 assert torch.allclose(non_parallel_model_parameter, ddp_model_parameter)
 
         # Shuffle the data so that during the next iteration, each DDP rank sees a different set of inputs.

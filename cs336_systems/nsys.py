@@ -1,4 +1,5 @@
 import torch.cuda.nvtx as nvtx
+import argparse
 
 model_list = {
     'small': {'d_model': 768, 'd_ff': 3072, 'n_layers': 12, 'n_heads': 12}, 

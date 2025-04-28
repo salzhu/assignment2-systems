@@ -47,48 +47,62 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
     num_steps = data_in.shape[0]
     warmup_steps = 20
 
-    with profile(
-        activities=[
-            torch.profiler.ProfilerActivity.CPU,
-            torch.profiler.ProfilerActivity.CUDA,
-        ],
-        # schedule=torch.profiler.schedule(wait=0, warmup=0, active=1, repeat=n_steps),
-        schedule=torch.profiler.schedule(wait=0, warmup=warmup_steps, active=num_steps, repeat=num_steps),
-        # experimental_config=torch._C._profiler._ExperimentalConfig(verbose=True),
-        record_shapes=True,
-        profile_memory=True,
-        with_stack=True,
-    ) as prof:
 
-        for step in range(num_steps):
-            torch.cuda.synchronize()
+    for step in range(warmup_steps):
+        torch.cuda.synchronize()
 
-            start_time_step = timeit.default_timer()
+        print(f"Rank {rank} train step {step}")
+        # Forward pass
+        inputs = data_in[step]
+        targets = data_targ[step]
 
-            print(f"Rank {rank} train step {step}")
-            # Forward pass
-            inputs = data_in[step]
-            targets = data_targ[step]
+        outputs = ddp_model(inputs)
 
-            outputs = ddp_model(inputs)
+        outputs = outputs.view(-1, outputs.size(-1))
+        targets = targets.view(-1)
+        
+        loss = cross_entropy(outputs, targets)
+        loss.backward()
+        ddp_model.finish_gradient_synchronization() 
+        
+        # Update parameters
+        optimizer.step()
+        
+        params = ddp_model.state_dict()
+        print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, ", flush=True)
 
-            outputs = outputs.view(-1, outputs.size(-1))
-            targets = targets.view(-1)
-            
-            loss = cross_entropy(outputs, targets)
-            loss.backward()
-            ddp_model.finish_gradient_synchronization() 
-            
-            # Update parameters
-            optimizer.step()
-            end_time_step = timeit.default_timer()
-            
-            params = ddp_model.state_dict()
-            print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, ", flush=True)
+    torch.cuda.memory._record_memory_history(max_entries=1000000)
+    
+    for step in range(warmup_steps, num_steps):
+        torch.cuda.synchronize()
 
-            if step >= warmup_steps: 
-                step_times.append(end_time_step - start_time_step)
-        prof.export_memory_timeline(f"ddp{context_length}_{rank}_timeline.html", device='cuda')
+        start_time_step = timeit.default_timer()
+
+        print(f"Rank {rank} train step {step}")
+        # Forward pass
+        inputs = data_in[step]
+        targets = data_targ[step]
+
+        outputs = ddp_model(inputs)
+
+        outputs = outputs.view(-1, outputs.size(-1))
+        targets = targets.view(-1)
+        
+        loss = cross_entropy(outputs, targets)
+        loss.backward()
+        ddp_model.finish_gradient_synchronization() 
+        
+        # Update parameters
+        optimizer.step()
+        end_time_step = timeit.default_timer()
+        
+        params = ddp_model.state_dict()
+        print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, ", flush=True)
+
+        step_times.append(end_time_step - start_time_step)
+
+    torch.cuda.memory._dump_snapshot(f"ddp_{context_length}_{rank}_overlap.pickle")
+    torch.cuda.memory._record_memory_history(enabled=None)
     
     # state_dicts.append(model.state_dict())
     cleanup()

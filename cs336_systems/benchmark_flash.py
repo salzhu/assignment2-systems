@@ -111,7 +111,7 @@ if __name__ == '__main__':
     context_lens = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536]
     # context_lens = [128, 256, 1024, 4096, 16384, 65536]
     dtypes = [torch.float32, torch.bfloat16]
-    # dtypes = [torch.float32]
+    dtypes = [torch.bfloat16]
 
     for dtype in dtypes: 
         for dim in dims:

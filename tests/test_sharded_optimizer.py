@@ -42,7 +42,7 @@ def _test_sharded_optimizer(rank: int, world_size: int, model_class: Type[torch.
         betas=(0.9, 0.999),
         eps=1e-8,
     )
-    sharded_model = deepcopy(non_sharded_model)
+    sharded_model = deepcopy(non_sharded_model).to(device)
     sharded_optimizer = get_sharded_optimizer(
         sharded_model.parameters(),
         optimizer_cls,

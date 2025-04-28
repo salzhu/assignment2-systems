@@ -14,14 +14,14 @@ class Attention(nn.Module):
     def forward(self, Q, K, V):
         return scaled_dot_product_attention(Q, K, V)
 
-def pytorch_attn(batch_size, dim, seq_len, n=100, w=10):
+def pytorch_attn(batch_size, dim, seq_len, dtype, n=100, w=10):
     # make the attention module 
     # make random inputs Q, K, V of size batch_size x seq_len x dim 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    rand_Q = torch.randn(batch_size, seq_len, dim, device=device, requires_grad=True)
-    rand_K = torch.randn(batch_size, seq_len, dim, device=device, requires_grad=True)
-    rand_V = torch.randn(batch_size, seq_len, dim, device=device, requires_grad=True)
+    rand_Q = torch.randn(batch_size, seq_len, dim, dtype=dtype, device=device, requires_grad=True)
+    rand_K = torch.randn(batch_size, seq_len, dim, dtype=dtype, device=device, requires_grad=True)
+    rand_V = torch.randn(batch_size, seq_len, dim, dtype=dtype, device=device, requires_grad=True)
 
     forward_time = []
     backward_time = []
@@ -107,8 +107,8 @@ if __name__ == '__main__':
     ]
     context_lens = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536]
     # context_lens = [128, 256, 1024, 4096, 16384, 65536]
-    # dtypes = [torch.float32, torch.bfloat16]
-    dtypes = [torch.float32]
+    dtypes = [torch.float32, torch.bfloat16]
+    # dtypes = [torch.float32]
 
     for dtype in dtypes: 
         for dim in dims:
@@ -123,7 +123,7 @@ if __name__ == '__main__':
                 # use tile size of 16 for all
                 # with torch.autocast(device_type='cuda',dtype=dtype):
                 if args.triton == 1:
-                    forward, backward, full = flash_attn_triton(dim, context_len, dtype)
+                    forward, backward, full = flash_attn_triton(1, dim, context_len, dtype)
                 elif args.triton == 0:
                     forward, backward, full = pytorch_attn(dim, context_len, dtype)
 

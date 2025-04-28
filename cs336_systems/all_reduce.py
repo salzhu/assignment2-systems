@@ -34,26 +34,29 @@ def all_reduce(rank, world_size, tensor, result):
     tensor = torch.randn(tensor.shape).cuda(rank)
     # Warmup
     # tensor.to(f'cuda:{rank}')
-    for i in range(5):
+    for i in range(10):
         dist.all_reduce(tensor=tensor, op=dist.ReduceOp.SUM, async_op=False)
         if torch.cuda.is_available():
             torch.cuda.synchronize()  # Wait for CUDA kernels to finish
             dist.barrier()            # Wait for all the processes to get here
     
     # Perform all-reduce
-    start_time = timeit.default_timer()
-    dist.all_reduce(tensor=tensor, op=dist.ReduceOp.SUM, async_op=False)
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()  # Wait for CUDA kernels to finish
-        dist.barrier()            # Wait for all the processes to get here
-    end_time = timeit.default_timer()
-    duration = end_time - start_time
-    print(f"[all_reduce] Rank {rank}: all_reduce(world_size={world_size}) took {duration}", flush=True)
+    durations = []
+    for i in range(20):
+        start_time = timeit.default_timer()
+        dist.all_reduce(tensor=tensor, op=dist.ReduceOp.SUM, async_op=False)
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()  # Wait for CUDA kernels to finish
+            dist.barrier()            # Wait for all the processes to get here
+        end_time = timeit.default_timer()
+        duration = end_time - start_time
+        print(f"[all_reduce] Rank {rank}: all_reduce(world_size={world_size}) took {duration}", flush=True)
+        durations.append(duration)
     
     all_times = [torch.empty(1,device='cuda') for _ in range(world_size)]
     # all_times = [torch.empty(1) for _ in range(world_size)]
     
-    dist.all_gather(tensor_list=all_times, tensor=torch.tensor([duration]).cuda(rank), async_op=False)
+    dist.all_gather(tensor_list=all_times, tensor=torch.tensor([np.mean(durations)]).cuda(rank), async_op=False)
     # dist.all_gather(tensor_list=all_times, tensor=torch.tensor([duration]), async_op=False)
     
     result.append(np.mean([time.cpu() for time in all_times]))

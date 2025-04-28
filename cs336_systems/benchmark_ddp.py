@@ -88,7 +88,7 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
 
             if step >= warmup_steps: 
                 step_times.append(end_time_step - start_time_step)
-        prof.export_memory_timeline(f"ddp{context_length}_{rank}_timeline.html", device=device)
+        prof.export_memory_timeline(f"ddp{context_length}_{rank}_timeline.html", device='cuda')
     
     # state_dicts.append(model.state_dict())
     cleanup()

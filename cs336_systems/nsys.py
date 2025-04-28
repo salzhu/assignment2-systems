@@ -1,6 +1,9 @@
 import torch.cuda.nvtx as nvtx
 import argparse
 
+from cs336_basics.model import BasicsTransformerLM
+from cs336_basics.optimizer import AdamW
+
 model_list = {
     'small': {'d_model': 768, 'd_ff': 3072, 'n_layers': 12, 'n_heads': 12}, 
     'medium': {'d_model': 1024, 'd_ff': 4096, 'n_layers': 24, 'n_heads': 16}, 
@@ -23,12 +26,12 @@ def profile_forward(context_len, name, warmup, n):
     torch.cuda.synchronize()
 
     with nvtx.range("warmup"):
-        for _ in range(warmup):
+        for i in range(warmup):
             preds = model(batch)
             torch.cuda.synchronize()
 
     with nvtx.range("forward"):
-        for _ in range(n):
+        for i in range(n):
             preds = model(batch)
             torch.cuda.synchronize()
 

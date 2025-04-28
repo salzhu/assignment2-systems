@@ -56,7 +56,7 @@ def all_reduce(rank, world_size, tensor, result):
     all_times = [torch.empty(1,device='cuda') for _ in range(world_size)]
     # all_times = [torch.empty(1) for _ in range(world_size)]
     
-    dist.all_gather(tensor_list=all_times, tensor=torch.tensor([np.mean(durations)]).cuda(rank), async_op=False)
+    dist.all_gather(tensor_list=all_times, tensor=torch.tensor([torch.mean(durations)]).cuda(rank), async_op=False)
     # dist.all_gather(tensor_list=all_times, tensor=torch.tensor([duration]), async_op=False)
     
     result.append(np.mean([time.cpu() for time in all_times]))
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     df = {'num. processes': [], 'data size': [], 'time (ms)': []}
 
-    world_sizes = [6]
+    world_sizes = [2,4,6]
     shapes = [
         (250, 1000, '1MB'), # 1mb
         (2500, 1000, '10MB'), # 10mb

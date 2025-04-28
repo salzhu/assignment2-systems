@@ -16,11 +16,81 @@ class OptimizerSharded(torch.optim.Optimizer):
         super().__init__(params)
 
         world_size = 2 
+        total_params = 0 
 
-        raise NotImplementedError
+        self.rank = 0 
+        self.params = params
+
+        for param in params:
+            if param.device == 'cuda:1':
+                self.rank = 1
+            if param.requires_grad:
+                total_params += np.prod(param.data.shape)
+
+        cur_count = 0 
+        self.index = 0 
+        for param in params:
+            if param.requires_grad:
+                cur_count += np.prod(param.data.shape)
+            if cur_count > total_params / 2: 
+                break 
+            self.index += 1
+
+        self.opt = None 
+        if self.rank == 0: 
+            self.opt = optimizer_cls(
+                params[:self.index], kwargs
+            )
+        elif self.rank == 1:
+            self.opt = optimizer_cls(
+                params[self.index:], kwargs
+            )
+
+        # params_list_0 = []
+        # params_list_1 = []
+
+        # cur_count = 0 
+
+        # for param in params:
+        #     if param.requires_grad:
+        #         cur_count += np.prod(param.data.shape)
+        #     if cur_count < total_params / 2:
+        #         params_list_0.append(param)
+        #     else:
+        #         params_list_1.append(param)
+
+        # # make two optimizers with the different params 
+        # self.opt = None 
+
+        # if rank == 0: 
+        #     self.opt = optimizer_cls(
+        #         params_list_0, kwargs
+        #     )
+        # elif rank == 1:
+        #     self.opt = optimizer_cls(
+        #         params_list_1, kwargs
+        #     )
+
+        # raise NotImplementedError
     
     def step(self, closure, **kwargs):
-        raise NotImplementedError
+
+        # for current rank, they have the params list
+        # collect the gradients all_reduce on these params 
+        # perform an optimizer step 
+        # send these params out 
+
+        self.opt.step()
+        # half the parameters are now updated 
+
+        if self.rank == 0: 
+            for param in self.params[:self.index]:
+                dist.broadcast(tensor=param.data,src=0)
+        elif self.rank == 1: 
+            for param in self.params[self.index:]:
+                dist.broadcast(tensor=param.data,src=1)
+
+        # raise NotImplementedError
     
     def add_param_group(self, param_group: dict[str, Any]):
         raise NotImplementedError

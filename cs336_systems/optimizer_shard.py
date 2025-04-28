@@ -28,49 +28,49 @@ class OptimizerSharded(torch.optim.Optimizer):
             if param.requires_grad:
                 total_params += np.prod(param.data.shape)
 
-        cur_count = 0 
-        self.index = 0 
-        for param in params:
-            if param.requires_grad:
-                cur_count += np.prod(param.data.shape)
-            if cur_count > total_params / 2: 
-                break 
-            self.index += 1
-
-        self.opt = None 
-        if self.rank == 0: 
-            self.opt = optimizer_cls(
-                params[:self.index], **kwargs
-            )
-        elif self.rank == 1:
-            self.opt = optimizer_cls(
-                params[self.index:], **kwargs
-            )
-
-        # params_list_0 = []
-        # params_list_1 = []
-
         # cur_count = 0 
-
+        # self.index = 0 
         # for param in params:
         #     if param.requires_grad:
         #         cur_count += np.prod(param.data.shape)
-        #     if cur_count < total_params / 2:
-        #         params_list_0.append(param)
-        #     else:
-        #         params_list_1.append(param)
+        #     if cur_count > total_params / 2: 
+        #         break 
+        #     self.index += 1
 
-        # # make two optimizers with the different params 
         # self.opt = None 
+        # if self.rank == 0: 
+        #     self.opt = optimizer_cls(
+        #         params[:self.index], **kwargs
+        #     )
+        # elif self.rank == 1:
+        #     self.opt = optimizer_cls(
+        #         params[self.index:], **kwargs
+        #     )
 
-        # if rank == 0: 
-        #     self.opt = optimizer_cls(
-        #         params_list_0, kwargs
-        #     )
-        # elif rank == 1:
-        #     self.opt = optimizer_cls(
-        #         params_list_1, kwargs
-        #     )
+        self.params_list_0 = []
+        self.params_list_1 = []
+
+        cur_count = 0 
+
+        for param in params:
+            if param.requires_grad:
+                cur_count += np.prod(param.data.shape)
+            if cur_count < total_params / 2:
+                self.params_list_0.append(param)
+            else:
+                self.params_list_1.append(param)
+
+        # make two optimizers with the different params 
+        self.opt = None 
+
+        if self.rank == 0: 
+            self.opt = optimizer_cls(
+                self.params_list_0, kwargs
+            )
+        elif self.rank == 1:
+            self.opt = optimizer_cls(
+                self.params_list_1, kwargs
+            )
 
         # raise NotImplementedError
     
@@ -85,11 +85,18 @@ class OptimizerSharded(torch.optim.Optimizer):
         # half the parameters are now updated 
 
         if self.rank == 0: 
-            for param in self.params[:self.index]:
+            for param in self.params_list_0:
                 dist.broadcast(tensor=param.data,src=0)
         elif self.rank == 1: 
-            for param in self.params[self.index:]:
+            for param in self.params_list_1:
                 dist.broadcast(tensor=param.data,src=1)
+
+        # if self.rank == 0: 
+        #     for param in self.params[:self.index]:
+        #         dist.broadcast(tensor=param.data,src=0)
+        # elif self.rank == 1: 
+        #     for param in self.params[self.index:]:
+        #         dist.broadcast(tensor=param.data,src=1)
 
         # raise NotImplementedError
     

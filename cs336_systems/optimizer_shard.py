@@ -97,7 +97,7 @@ class OptimizerSharded(torch.optim.Optimizer):
 
         # raise NotImplementedError
     
-    def step(self, closure, **kwargs):
+    def step(self, **kwargs):
 
         # for current rank, they have the params list
         # collect the gradients all_reduce on these params 

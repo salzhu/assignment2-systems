@@ -127,6 +127,9 @@ class DDPOverlapBucketed(torch.nn.Module):
                 cur_list.append(index)
                 index += 1
 
+        self.param_buckets.append(cur_list)
+        previous_param.register_post_accumulate_grad_hook(self.add_hook(len(self.param_buckets) - 1))
+
         # pre-compute the buckets 
         # only add hooks to the appropriate ones 
 

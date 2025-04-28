@@ -26,11 +26,11 @@ from .common import (
 logger = logging.getLogger(__name__)
 
 
-# @pytest.mark.parametrize("model_class", [ToyModel, ToyModelWithTiedWeights])
-@pytest.mark.parametrize("model_class", [ToyModel])
-# @pytest.mark.parametrize("bucket_size_mb", [0.0016, 0.0001, 0.01])
+@pytest.mark.parametrize("model_class", [ToyModel, ToyModelWithTiedWeights])
+# @pytest.mark.parametrize("model_class", [ToyModel])
+@pytest.mark.parametrize("bucket_size_mb", [0.0016, 0.0001, 0.01])
 # @pytest.mark.parametrize("bucket_size_mb", [0.0016, 0.01])
-@pytest.mark.parametrize("bucket_size_mb", [0.003])
+# @pytest.mark.parametrize("bucket_size_mb", [0.003])
 def test_DistributedDataParallelCPU(bucket_size_mb, model_class):
     """
     bucket_size_mb 0.0016 is designed to test the case with 2 buckets (one bucket
@@ -123,7 +123,7 @@ def _test_DistributedDataParallelCPU(
     # Optimizer for the non-parallel model
     non_parallel_optimizer = optim.SGD(non_parallel_model.parameters(), lr=0.1)
 
-    for i in range(2):
+    for i in range(5):
         ddp_bucketed_on_train_batch_start(ddp_model=ddp_model, optimizer=ddp_optimizer)
         ddp_optimizer.zero_grad()
         non_parallel_optimizer.zero_grad()

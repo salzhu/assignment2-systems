@@ -34,6 +34,17 @@ class OptimizerSharded(torch.optim.Optimizer):
                 print('getting here')
                 total_params += np.prod(param.data.shape)
 
+
+        # make self.local_params variable
+        # call init which populates ^ 
+        # make self.optim with self.local_params 
+
+        # in add param group 
+        # check parameters, make dict that takes out the 'params' 
+        # some params list appends the new param in round robin 
+        # self.local_params variable is ^ 
+        # also call add param group on wrapper 
+
         # self.param_groups
 
         # cur_count = 0 

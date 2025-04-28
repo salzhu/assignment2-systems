@@ -17,6 +17,7 @@ def profile_forward(context_len, name, warmup, n):
         model_list[name]['n_heads'], model_list[name]['d_ff'], 10000
     )
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
     batch = torch.randint(low=0, high=10000, size=(4, context_length), device=device)
     torch.cuda.synchronize()

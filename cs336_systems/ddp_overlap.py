@@ -101,6 +101,18 @@ class DDPOverlapBucketed(torch.nn.Module):
         # send at most bucket MB of gradients at a time 
         self.param_buckets = []
 
+        # cur_count = 0 
+        # cur_list = []
+        # index = 0 
+
+        # for i in range(len(list(self.module.parameters()))):
+        #     param = list(self.module.parameters())[i]
+        #     if param.requires_grad:
+        #         cur_count += np.prod(param.data.shape)
+        #         cur_list.append(index)
+
+        #     if cur_count + np.prod(param.data.shape)
+
         cur_count = 0 
         cur_list = [0]
         index = 0 

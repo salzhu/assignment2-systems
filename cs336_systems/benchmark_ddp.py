@@ -8,6 +8,8 @@ import pandas as pd
 import numpy as np 
 import argparse
 
+from cs336_basics.model import BasicsTransformerLM 
+from cs336_basics.nn_utils import cross_entropy
 from ddp_overlap import DDPIndividualParameters, DDPOverlapBucketed
 
 if __name__ == '__main__':
@@ -35,5 +37,28 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     inputs = torch.randint(0,vocab_size,(1, batch_size, context_length), device=device)
     targets = torch.randint(0,vocab_size,(1, batch_size, context_length), device=device)
+
+    optimizer = torch.optim.AdamW(ddp_model.parameters(), lr=1e-3)  # Each rank has own optimizer state
+    times = []
+
+    for i in range(w+n):
+        
+        torch.cuda.synchronize()
+        start_time_step = timeit.default_timer()
+        outputs = ddp_model(inputs)
+        outputs = outputs.view(-1, outputs.size(-1))
+        targets = targets.view(-1)
+        
+        loss = cross_entropy(outputs, targets)
+        loss.backward()
+        torch.cuda.synchronize()
+        optimizer.step()
+        torch.cuda.synchronize()
+
+        end_time = timeit.default_timer()
+        times.append((end_time - start_time_step) * 1000)
+
+    print('step time')
+    print(np.mean(times))
 
     

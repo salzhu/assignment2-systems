@@ -50,7 +50,7 @@ def ddp_naive_main(rank, world_size, data_in, data_targ, weights,
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)  # Each rank has own optimizer state
 
     num_steps = data_in.shape[0]
-    warmup_steps = 5
+    warmup_steps = 20
 
     for step in range(num_steps):
         torch.cuda.synchronize()

@@ -98,10 +98,14 @@ class DDPOverlapBucketed(torch.nn.Module):
         cur_count = 0 
         cur_list = []
         index = 0 
-        previous_param = list(self.module.parameters())[0]
+        previous_param = None 
         for param in self.module.parameters():
             if param.requires_grad:
-                
+                previous_param = param
+                break 
+
+        for param in self.module.parameters():
+            if param.requires_grad:
 
                 if cur_count + np.prod(param.data.shape) >= self.n_floats:
                     self.param_buckets.append(cur_list)

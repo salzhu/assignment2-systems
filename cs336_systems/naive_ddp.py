@@ -193,6 +193,7 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--flat", type=int, default=0)
+    parser.add_argument("--context_length", type=int, default=256)
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -200,7 +201,7 @@ if __name__ == '__main__':
 
     n = 80
     batch_size = 4
-    context_length = 256
+    context_length = args.context_length # 256
 
     vocab_size = 10000
     d_model = 1600

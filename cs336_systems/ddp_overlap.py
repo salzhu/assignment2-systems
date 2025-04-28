@@ -120,7 +120,7 @@ class DDPOverlapBucketed(torch.nn.Module):
         #         param.register_post_accumulate_grad_hook(self.add_hook())
 
     def add_hook(self, id):
-        def hook(param):
+        def hook(param_hooked):
             # flatten
             param_ids = self.param_buckets[id]
             flat_list = []

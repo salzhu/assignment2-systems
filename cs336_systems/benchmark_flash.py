@@ -128,16 +128,26 @@ if __name__ == '__main__':
                 if args.triton == 1:
                     forward, backward, full = flash_attn_triton(dim, context_len, dtype)
                 elif args.triton == 0:
-                    forward, backward, full = pytorch_attn(1, dim, context_len, dtype)
+                    try:
+                        forward, backward, full = pytorch_attn(1, dim, context_len, dtype)
 
-                df['model dim'].append(dim)
-                df['seq len'].append(context_len)
-                df['dtype'].append(str(dtype))
-                df['forward time (ms)'].append(1000 * forward)
-                df['backward time (ms)'].append(1000 * backward)
-                df['full step time (ms)'].append(1000 * full)
+                        df['model dim'].append(dim)
+                        df['seq len'].append(context_len)
+                        df['dtype'].append(str(dtype))
+                        df['forward time (ms)'].append(1000 * forward)
+                        df['backward time (ms)'].append(1000 * backward)
+                        df['full step time (ms)'].append(1000 * full)
+                        print(1000 * forward, 1000 * backward)
+                    except:
+                        df['model dim'].append(dim)
+                        df['seq len'].append(context_len)
+                        df['dtype'].append(str(dtype))
+                        df['forward time (ms)'].append('oom')
+                        df['backward time (ms)'].append('oom')
+                        df['full step time (ms)'].append('oom')
+                        print('oom')
 
-                print(1000 * forward, 1000 * backward)
+                
                     # except: 
                     #     df['model dim'].append(dim)
                     #     df['seq len'].append(context_len)

@@ -123,9 +123,9 @@ if __name__ == '__main__':
                 # use tile size of 16 for all
                 # with torch.autocast(device_type='cuda',dtype=dtype):
                 if args.triton == 1:
-                    forward, backward, full = flash_attn_triton(1, dim, context_len, dtype)
+                    forward, backward, full = flash_attn_triton(dim, context_len, dtype)
                 elif args.triton == 0:
-                    forward, backward, full = pytorch_attn(dim, context_len, dtype)
+                    forward, backward, full = pytorch_attn(1, dim, context_len, dtype)
 
                 df['model dim'].append(dim)
                 df['seq len'].append(context_len)

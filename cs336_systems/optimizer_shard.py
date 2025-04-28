@@ -14,7 +14,7 @@ from torch.optim import Optimizer as Optimizer
 class OptimizerSharded(torch.optim.Optimizer):
     def __init__(self, params, optimizer_cls, **kwargs: Any):
         print(dict(**kwargs))
-        super().__init__(params, dict(**kwargs))
+        # super().__init__(params, dict(**kwargs))
 
         world_size = 2 
         total_params = 0 

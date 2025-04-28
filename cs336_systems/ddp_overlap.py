@@ -115,9 +115,9 @@ class DDPOverlapBucketed(torch.nn.Module):
         # pre-compute the buckets 
         # only add hooks to the appropriate ones 
 
-        for param in self.module.parameters():
-            if param.requires_grad:
-                param.register_post_accumulate_grad_hook(self.add_hook())
+        # for param in self.module.parameters():
+        #     if param.requires_grad:
+        #         param.register_post_accumulate_grad_hook(self.add_hook())
 
     def add_hook(self, id):
         def hook(param):

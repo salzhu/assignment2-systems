@@ -22,10 +22,11 @@ class OptimizerSharded(torch.optim.Optimizer):
         self.rank = 0 
         self.params = params
 
-        for param in params:
-            print(param)
+        # for param in params:
+        #     print(param)
 
         for param in params:
+            print(param)
             if param.device == 'cuda:1':
                 self.rank = 1
             if param.requires_grad:

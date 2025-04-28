@@ -46,34 +46,48 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
     num_steps = data_in.shape[0]
     warmup_steps = 20
 
-    for step in range(num_steps):
-        torch.cuda.synchronize()
+    with profile(
+        activities=[
+            torch.profiler.ProfilerActivity.CPU,
+            torch.profiler.ProfilerActivity.CUDA,
+        ],
+        # schedule=torch.profiler.schedule(wait=0, warmup=0, active=1, repeat=n_steps),
+        schedule=torch.profiler.schedule(wait=0, warmup=warmup_its, active=n_steps, repeat=n_steps),
+        # experimental_config=torch._C._profiler._ExperimentalConfig(verbose=True),
+        record_shapes=True,
+        profile_memory=True,
+        with_stack=True,
+    ) as prof:
 
-        start_time_step = timeit.default_timer()
+        for step in range(num_steps):
+            torch.cuda.synchronize()
 
-        print(f"Rank {rank} train step {step}")
-        # Forward pass
-        inputs = data_in[step]
-        targets = data_targ[step]
+            start_time_step = timeit.default_timer()
 
-        outputs = ddp_model(inputs)
+            print(f"Rank {rank} train step {step}")
+            # Forward pass
+            inputs = data_in[step]
+            targets = data_targ[step]
 
-        outputs = outputs.view(-1, outputs.size(-1))
-        targets = targets.view(-1)
-        
-        loss = cross_entropy(outputs, targets)
-        loss.backward()
-        ddp_model.finish_gradient_synchronization() 
-        
-        # Update parameters
-        optimizer.step()
-        end_time_step = timeit.default_timer()
-        
-        params = ddp_model.state_dict()
-        print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, ", flush=True)
+            outputs = ddp_model(inputs)
 
-        if step >= warmup_steps: 
-            step_times.append(end_time_step - start_time_step)
+            outputs = outputs.view(-1, outputs.size(-1))
+            targets = targets.view(-1)
+            
+            loss = cross_entropy(outputs, targets)
+            loss.backward()
+            ddp_model.finish_gradient_synchronization() 
+            
+            # Update parameters
+            optimizer.step()
+            end_time_step = timeit.default_timer()
+            
+            params = ddp_model.state_dict()
+            print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, ", flush=True)
+
+            if step >= warmup_steps: 
+                step_times.append(end_time_step - start_time_step)
+        prof.export_memory_timeline(f"ddp{context_length}_{rank}_timeline.html", device=device)
     
     # state_dicts.append(model.state_dict())
     cleanup()

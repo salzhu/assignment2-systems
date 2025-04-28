@@ -155,7 +155,7 @@ class DDPOverlapBucketed(torch.nn.Module):
                 if param.requires_grad:
                     if index in param_ids:
                         param.grad = unflat_grads[count_grad] # divide 
-                        param.grad.div_(2)
+                        # param.grad.div_(2)
                         count_grad += 1
                     index += 1
         
@@ -170,9 +170,9 @@ class DDPOverlapBucketed(torch.nn.Module):
         for handle in self.handles:
             handle.wait()
 
-        # for param in self.module.parameters():
-        #     if param.requires_grad:
-        #         param.grad.div_(2)
+        for param in self.module.parameters():
+            if param.requires_grad:
+                param.grad.div_(2)
 
         self.handles.clear()
 

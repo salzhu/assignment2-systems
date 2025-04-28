@@ -93,6 +93,7 @@ class OptimizerSharded(torch.optim.Optimizer):
         print(self.params_list_1)
 
         self.param_groups = self.opt.param_groups
+        self._optimizer_step_pre_hooks = self.opt._optimizer_step_pre_hooks
 
         # raise NotImplementedError
     

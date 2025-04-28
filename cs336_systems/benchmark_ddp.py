@@ -7,6 +7,7 @@ import timeit
 import pandas as pd 
 import numpy as np 
 import argparse
+from torch.profiler import profile
 
 from cs336_basics.model import BasicsTransformerLM 
 from cs336_basics.nn_utils import cross_entropy

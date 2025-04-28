@@ -127,7 +127,7 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)  # Each rank has own optimizer state
 
     num_steps = data_in.shape[0]
-    warmup_steps = 5
+    warmup_steps = 20
 
     for step in range(num_steps):
         torch.cuda.synchronize()
@@ -198,7 +198,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     world_size = 2
 
-    n = 20
+    n = 80
     batch_size = 4
     context_length = 256
 
@@ -243,29 +243,29 @@ if __name__ == '__main__':
     print('grad collect')
     print(np.mean(grad_collect_times))
     
-    print("training og --- check results match!")
+    # print("training og --- check results match!")
 
-    model.to(device)
+    # model.to(device)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
-    for step in range(n):
-        # Forward pass
-        inputs = data_in[step]
-        targets = data_targ[step]
+    # optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+    # for step in range(n):
+    #     # Forward pass
+    #     inputs = data_in[step]
+    #     targets = data_targ[step]
 
-        outputs = model(inputs)
+    #     outputs = model(inputs)
 
-        outputs = outputs.view(-1, outputs.size(-1))
-        targets = targets.view(-1)
+    #     outputs = outputs.view(-1, outputs.size(-1))
+    #     targets = targets.view(-1)
         
-        loss = cross_entropy(outputs, targets)
-        loss.backward()
-        optimizer.step()
+    #     loss = cross_entropy(outputs, targets)
+    #     loss.backward()
+    #     optimizer.step()
 
-        params = model.state_dict()
-        print(f"[data_parallelism] Rank og: step = {step}, loss = {loss.item()}, params = {params['layers.1.ln1.weight']}", flush=True)
+    #     params = model.state_dict()
+    #     print(f"[data_parallelism] Rank og: step = {step}, loss = {loss.item()}, params = {params['layers.1.ln1.weight']}", flush=True)
     
-    print("done")
+    # print("done")
     # print("checking params are the same") 
     # model2 = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
     # model2.load_state_dict(state_dicts[-1])

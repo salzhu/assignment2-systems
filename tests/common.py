@@ -35,7 +35,7 @@ class _FC2(nn.Module):
 class ToyModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc1 = nn.Linear(10, 10, bias=False)
+        self.fc1 = nn.Linear(10, 5, bias=False) # 10,10
         # self.fc2 = _FC2()
         # self.fc3 = nn.Linear(50, 5, bias=False)
         self.relu = nn.ReLU()

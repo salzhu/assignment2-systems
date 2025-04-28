@@ -20,12 +20,12 @@ class OptimizerSharded(torch.optim.Optimizer):
         total_params = 0 
 
         self.rank = 0 
-        self.params = params
+        self.params = []
 
-        # for param in params:
-        #     print(param)
+        for param in params:
+            self.params.append(param)
 
-        for param in list(self.params):
+        for param in self.params:
             print(param)
             if param.device == 'cuda:1':
                 self.rank = 1
@@ -63,7 +63,7 @@ class OptimizerSharded(torch.optim.Optimizer):
         # for param in params:
         #     print(param)
 
-        for param in list(self.params):
+        for param in self.params:
             print('here')
             if param.requires_grad:
                 cur_count += np.prod(param.data.shape)

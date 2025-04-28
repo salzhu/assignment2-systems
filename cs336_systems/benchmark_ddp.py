@@ -51,7 +51,6 @@ if __name__ == '__main__':
         
         loss = cross_entropy(outputs, targets)
         loss.backward()
-        torch.cuda.synchronize()
         optimizer.step()
         torch.cuda.synchronize()
 

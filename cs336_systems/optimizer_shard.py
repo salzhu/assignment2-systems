@@ -119,5 +119,5 @@ class OptimizerSharded(torch.optim.Optimizer):
         # raise NotImplementedError
     
     def add_param_group(self, param_group: dict[str, Any]):
-        self.optim.add_param_group(param_group)
+        self.opt.add_param_group(param_group)
         # raise NotImplementedError

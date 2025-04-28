@@ -13,7 +13,7 @@ from torch.optim import Optimizer as Optimizer
 
 class OptimizerSharded(torch.optim.Optimizer):
     def __init__(self, params, optimizer_cls, **kwargs: Any):
-        super().__init__(params)
+        super().__init__(params, **kwargs)
 
         world_size = 2 
         total_params = 0 

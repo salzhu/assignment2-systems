@@ -57,6 +57,7 @@ class OptimizerSharded(torch.optim.Optimizer):
         for param in params:
             if param.requires_grad:
                 cur_count += np.prod(param.data.shape)
+            print(cur_count)
             if cur_count < total_params / 2:
                 self.params_list_0.append(param)
             else:

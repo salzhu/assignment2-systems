@@ -21,6 +21,7 @@ class OptimizerSharded(torch.optim.Optimizer):
 
         self.rank = 0 
         self.params = []
+        self.defaults = dict(**kwargs)
 
         for param in params:
             self.params.append(param)

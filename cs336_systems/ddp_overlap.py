@@ -92,6 +92,12 @@ class DDPOverlapBucketed(torch.nn.Module):
         for param in self.module.parameters():
             dist.broadcast(tensor=param.data,src=0)
 
+        # self.param_counts = []
+        # param_list = list(self.module.parameters())
+        # for i in range(len(param_list)):
+        #     if param_list[i].requires_grad:
+
+
         # send at most bucket MB of gradients at a time 
         self.param_buckets = []
 
@@ -147,7 +153,7 @@ class DDPOverlapBucketed(torch.nn.Module):
             handle = dist.all_reduce(tensor=flat_grads, op=dist.ReduceOp.SUM, async_op=True)
             print('get here')
             # unflatten 
-            unflat_grads = torch._utils._unflatten_dense_tensors(flat_grads, [tensor for tensor in flat_list])
+            unflat_grads = torch._utils._unflatten_dense_tensors(flat_grads, flat_list)
 
             count_grad = 0 
             index = 0 

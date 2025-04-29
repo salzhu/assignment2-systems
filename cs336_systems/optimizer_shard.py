@@ -59,7 +59,7 @@ class OptimizerSharded(torch.optim.Optimizer):
         self.params_list_0 = []
         self.params_list_1 = []
 
-        # cur_count = 0 
+        cur_count = 0 
         # print("total params")
         # print(total_params)
         # print(params)

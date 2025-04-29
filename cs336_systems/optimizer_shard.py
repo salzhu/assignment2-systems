@@ -56,7 +56,7 @@ class OptimizerSharded(torch.optim.Optimizer):
 
         print(list(hyperparams.keys()))
         self.opt = optimizer_cls(
-            self.local_param_groups, dict(**kwargs) 
+            self.local_param_groups, **kwargs
         )
         # self.opt. add param group? 
 

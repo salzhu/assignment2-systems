@@ -1,9 +1,11 @@
 import torch 
 import torch.cuda.nvtx as nvtx
 import argparse
+import math 
 
 from cs336_basics.model import BasicsTransformerLM
 from cs336_basics.optimizer import AdamW
+from einops import rearrange, einsum
 
 model_list = {
     'small': {'d_model': 768, 'd_ff': 3072, 'n_layers': 12, 'n_heads': 12}, 
@@ -87,6 +89,33 @@ def profile_full(context_len, name, warmup, n):
             optimizer.step()
             torch.cuda.synchronize()
 
+def softmax(x, dim=-1):
+    rescaled_input = x - torch.max(x, dim=dim, keepdim=True)[0]
+    exponentiated_rescaled_input = torch.exp(rescaled_input)
+    return exponentiated_rescaled_input / torch.sum(exponentiated_rescaled_input, dim=dim, keepdim=True)
+
+def annotated_scaled_dot_product_attention(Q, K, V):
+
+    d_k = K.shape[-1]
+    attention_scores = einsum(Q, K, "... query d_k, ... key d_k -> ... query key") / math.sqrt(d_k)
+
+    attention_weights = softmax(attention_scores, dim=-1)  # Softmax over the key dimension
+
+    return einsum(attention_weights, V, "... query key, ... key d_v ->  ... query d_v")
+
+def profile_attn(context_len, name, warmup, n):
+
+    d = model_list[name]['d_model']
+
+    Q = torch.randn(4, context_len, d)
+    K = torch.randn(4, context_len, d)
+    V = torch.randn(4, context_len, d)
+
+    for i in range(warmup + n):
+        out = annotated_scaled_dot_product_attention(Q, K, V)
+        torch.cuda.synchronize()
+    return 
+
 if __name__ == '__main__':
     # sweep across the models and context lengths 
 
@@ -95,4 +124,4 @@ if __name__ == '__main__':
     parser.add_argument("--len", type=int)
     args = parser.parse_args()
 
-    profile_full(args.len, args.model, 15, 30)
+    profile_attn(args.len, args.model, 15, 30)

@@ -2,6 +2,7 @@ import os
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
+import torch.cuda.nvtx as nvtx
 
 import timeit 
 import pandas as pd 
@@ -57,7 +58,8 @@ class DDPIndividualParameters(torch.nn.Module):
     
     def add_hook(self):
         def hook(param):
-            handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.SUM, async_op=True)
+            with nvtx.range(f"all_reduce"):
+                handle = dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.SUM, async_op=True)
             self.handles.append(handle)
             # param.grad /= 2
             # handle.wait()

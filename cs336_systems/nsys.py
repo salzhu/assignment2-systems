@@ -89,17 +89,12 @@ def profile_full(context_len, name, warmup, n):
             optimizer.step()
             torch.cuda.synchronize()
 
-def softmax(x, dim=-1):
-    rescaled_input = x - torch.max(x, dim=dim, keepdim=True)[0]
-    exponentiated_rescaled_input = torch.exp(rescaled_input)
-    return exponentiated_rescaled_input / torch.sum(exponentiated_rescaled_input, dim=dim, keepdim=True)
-
 def annotated_scaled_dot_product_attention(Q, K, V):
 
     d_k = K.shape[-1]
     attention_scores = einsum(Q, K, "... query d_k, ... key d_k -> ... query key") / math.sqrt(d_k)
 
-    attention_weights = softmax(attention_scores, dim=-1)  # Softmax over the key dimension
+    attention_weights = torch.nn.functional.softmax(attention_scores, dim=-1)  # Softmax over the key dimension
 
     return einsum(attention_weights, V, "... query key, ... key d_v ->  ... query d_v")
 

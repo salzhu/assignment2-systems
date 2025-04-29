@@ -97,6 +97,7 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
             
             # Update parameters
             optimizer.step()
+            torch.cuda.synchronize()
             end_time_step = timeit.default_timer()
             
             params = ddp_model.state_dict()
@@ -183,6 +184,7 @@ def ddp_overlap_bucketed_main(rank, world_size, data_in, data_targ,
         
         # Update parameters
         optimizer.step()
+        torch.cuda.synchronize()
         end_time_step = timeit.default_timer()
         
         params = ddp_model.state_dict()

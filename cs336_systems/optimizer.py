@@ -15,6 +15,7 @@ class OptimizerSharded(torch.optim.Optimizer):
         self.defaults = dict(**kwargs)
 
         self.local_param_groups = []
+        self.param_count = 0
 
         hyperparams = dict(**kwargs) 
         super().__init__(params, defaults=kwargs)
@@ -43,13 +44,13 @@ class OptimizerSharded(torch.optim.Optimizer):
 
         local_param_group = []
         
-        index = 0
         for param in param_group['params']:
-            if index % 2 == 0 and self.rank == 0: 
+            if self.param_count % 2 == 0 and self.rank == 0: 
                 local_param_group.append(param)
-            elif index % 2 == 1 and self.rank == 1: 
+            elif self.param_count % 2 == 1 and self.rank == 1: 
                 local_param_group.append(param)
-            index += 1
+            self.param_count += 1
+            # index += 1
 
         param_group_copy = copy.deepcopy(param_group)
         param_group_copy['params'] = local_param_group

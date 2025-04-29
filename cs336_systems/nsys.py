@@ -102,9 +102,9 @@ def profile_attn(context_len, name, warmup, n):
 
     d = model_list[name]['d_model']
 
-    Q = torch.randn(4, context_len, d)
-    K = torch.randn(4, context_len, d)
-    V = torch.randn(4, context_len, d)
+    Q = torch.randn(4, context_len, d).to('cuda')
+    K = torch.randn(4, context_len, d).to('cuda')
+    V = torch.randn(4, context_len, d).to('cuda')
 
     for i in range(warmup + n):
         out = annotated_scaled_dot_product_attention(Q, K, V)

@@ -36,6 +36,29 @@ def profile_forward(context_len, name, warmup, n):
             preds = model(batch)
             torch.cuda.synchronize()
 
+def profile_full(context_len, name, warmup, n):
+    model = BasicsTransformerLM(
+        10000, context_len, model_list[name]['d_model'], model_list[name]['n_layers'], 
+        model_list[name]['n_heads'], model_list[name]['d_ff'], 10000
+    )
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
+    batch = torch.randint(low=0, high=10000, size=(4, context_len), device=device)
+    torch.cuda.synchronize()
+
+    with nvtx.range("warmup"):
+        for i in range(warmup):
+            preds = model(batch)
+            preds.mean().backward()
+            torch.cuda.synchronize()
+
+    with nvtx.range("full"):
+        for i in range(n):
+            preds = model(batch)
+            preds.mean().backward()
+            torch.cuda.synchronize()
+
 if __name__ == '__main__':
     # sweep across the models and context lengths 
 
@@ -44,4 +67,4 @@ if __name__ == '__main__':
     parser.add_argument("--len", type=int)
     args = parser.parse_args()
 
-    profile_forward(args.len, args.model, 15, 30)
+    profile_full(args.len, args.model, 15, 30)

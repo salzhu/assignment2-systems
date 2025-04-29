@@ -55,8 +55,12 @@ class OptimizerSharded(torch.optim.Optimizer):
             self.param_count += 1
             # index += 1
 
+        # param_group_copy = copy.deepcopy(param_group)
+        # param_group_copy['params'] = copy.deepcopy(local_param_group)
+        # self.local_param_groups.append(param_group_copy)
+
         param_group_copy = copy.deepcopy(param_group)
-        param_group_copy['params'] = copy.deepcopy(local_param_group)
+        param_group_copy['params'] = local_param_group
         self.local_param_groups.append(param_group_copy)
 
         super().add_param_group(param_group)

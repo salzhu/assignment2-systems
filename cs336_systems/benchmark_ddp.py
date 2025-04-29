@@ -33,8 +33,8 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
     local_batch_size = batch_size // world_size  # @inspect local_batch_size
     start_index = rank * local_batch_size  # @inspect start_index
     end_index = start_index + local_batch_size  # @inspect end_index
-    data_in = data_in[:,start_index:end_index].cuda(rank) # n_steps x 2 x data
-    data_targ = data_targ[:,start_index:end_index].cuda(rank) # n_steps x 2 x data
+    data_in = data_in[:,start_index:end_index,:].cuda(rank) # n_steps x 2 x data
+    data_targ = data_targ[:,start_index:end_index,:].cuda(rank) # n_steps x 2 x data
 
     # use params passed in to load a transformer 
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)

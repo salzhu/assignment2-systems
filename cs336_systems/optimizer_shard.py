@@ -52,7 +52,7 @@ class OptimizerSharded(torch.optim.Optimizer):
 
         # hyperparams = dict(**kwargs) 
         # del(hyperparams['params'])
-        super().__init__(params, dict(**kwargs) )
+        super().__init__(self.params, dict(**kwargs) )
 
         self.opt = optimizer_cls(
             self.local_param_groups, dict(**kwargs) 

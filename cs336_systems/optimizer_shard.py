@@ -150,9 +150,9 @@ class OptimizerSharded(torch.optim.Optimizer):
     def add_param_group(self, param_group: dict[str, Any]):
         index = 0
         for param in param_group:
-            if index % 0 == 0 and self.rank == 0: 
+            if index % 2 == 0 and self.rank == 0: 
                 self.local_param_groups.append(param)
-            elif index % 1 == 1 and self.rank == 1: 
+            elif index % 2 == 1 and self.rank == 1: 
                 self.local_param_groups.append(param)
             index += 1
 

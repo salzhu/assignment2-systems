@@ -16,7 +16,7 @@ from .common import (
 
 
 # @pytest.mark.parametrize("model_class", [ToyModel, ToyModelWithTiedWeights])
-@pytest.mark.parametrize("model_class", [ToyModel])
+@pytest.mark.parametrize("model_class", [ToyModelWithTiedWeights])
 def test_sharded_optimizer(model_class):
     world_size = 2
     mp.spawn(

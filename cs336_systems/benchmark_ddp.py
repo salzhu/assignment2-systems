@@ -241,7 +241,7 @@ if __name__ == '__main__':
                     nprocs=world_size, join=True)
         print('not bucketed')
     elif args.bucketed == 1:
-        mp.spawn(ddp_overlap_main, args=(world_size,n_inputs, n_targets, 
+        mp.spawn(ddp_overlap_bucketed_main, args=(world_size,n_inputs, n_targets, 
                                                 vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
                                                 batch_size,
                                                 state_dicts, step_times, args.bucket_size), 

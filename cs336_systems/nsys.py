@@ -36,7 +36,9 @@ def profile_forward(context_len, name, warmup, n):
             preds = model(batch)
             torch.cuda.synchronize()
 
-def profile_full(context_len, name, warmup, n):
+
+
+def profile_backward(context_len, name, warmup, n):
     model = BasicsTransformerLM(
         10000, context_len, model_list[name]['d_model'], model_list[name]['n_layers'], 
         model_list[name]['n_heads'], model_list[name]['d_ff'], 10000
@@ -57,6 +59,32 @@ def profile_full(context_len, name, warmup, n):
         for i in range(n):
             preds = model(batch)
             preds.mean().backward()
+            torch.cuda.synchronize()
+
+def profile_full(context_len, name, warmup, n):
+    model = BasicsTransformerLM(
+        10000, context_len, model_list[name]['d_model'], model_list[name]['n_layers'], 
+        model_list[name]['n_heads'], model_list[name]['d_ff'], 10000
+    )
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
+    batch = torch.randint(low=0, high=10000, size=(4, context_len), device=device)
+    torch.cuda.synchronize()
+
+    with nvtx.range("warmup"):
+        for i in range(warmup):
+            preds = model(batch)
+            preds.mean().backward()
+            optimizer.step()
+            torch.cuda.synchronize()
+
+    with nvtx.range("full"):
+        for i in range(n):
+            preds = model(batch)
+            preds.mean().backward()
+            optimizer.step()
             torch.cuda.synchronize()
 
 if __name__ == '__main__':

@@ -20,7 +20,7 @@ class OptimizerSharded(torch.optim.Optimizer):
         hyperparams = dict(**kwargs) 
         super().__init__(params, defaults=kwargs)
 
-        self.params = list(params)
+        self.params_order = []
 
         self.opt = optimizer_cls(
             self.local_param_groups, **kwargs
@@ -32,7 +32,7 @@ class OptimizerSharded(torch.optim.Optimizer):
         dist.barrier()
 
         index = 0 
-        for param in self.params:
+        for param in self.params_order:
             source_rank = index % 2
             dist.broadcast(tensor=param.data,src=source_rank)
             index += 1 
@@ -51,7 +51,7 @@ class OptimizerSharded(torch.optim.Optimizer):
             elif self.param_count % 2 == 1 and self.rank == 1: 
                 local_param_group.append(param)
                 print('1')
-            self.param_count += 1
+            self.params_order.append(param)
             # index += 1
 
         param_group_copy = copy.deepcopy(param_group)

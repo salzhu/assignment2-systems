@@ -156,5 +156,5 @@ class OptimizerSharded(torch.optim.Optimizer):
                 self.local_param_groups.append(param)
             index += 1
 
-        self.opt.add_param_group(self.local_param_groups)
+        # self.opt.add_param_group(self.local_param_groups)
         # raise NotImplementedError

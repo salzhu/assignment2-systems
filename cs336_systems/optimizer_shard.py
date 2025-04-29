@@ -30,9 +30,12 @@ class OptimizerSharded(torch.optim.Optimizer):
             print(param)
             if param.device == 'cuda:1':
                 self.rank = 1
-            if param.requires_grad:
-                print('getting here')
-                total_params += np.prod(param.data.shape)
+            break 
+            # if param.requires_grad:
+            #     print('getting here')
+            #     total_params += np.prod(param.data.shape)
+
+        self.local_param_groups = [] 
 
 
         # make self.local_params variable
@@ -46,6 +49,15 @@ class OptimizerSharded(torch.optim.Optimizer):
         # also call add param group on wrapper 
 
         # self.param_groups
+
+        hyperparams = dict(**kwargs) 
+        del(hyperparams['params'])
+        super().__init__(self.local_param_groups, hyperparams)
+
+        self.opt = optimizer_cls(
+            self.local_param_groups, hyperparams
+        )
+        # self.opt. add param group? 
 
         # cur_count = 0 
         # self.index = 0 
@@ -66,46 +78,46 @@ class OptimizerSharded(torch.optim.Optimizer):
         #         params[self.index:], **kwargs
         #     )
 
-        self.params_list_0 = []
-        self.params_list_1 = []
+        # self.params_list_0 = []
+        # self.params_list_1 = []
 
-        cur_count = 0 
-        print("total params")
-        print(total_params)
-        print(params)
+        # cur_count = 0 
+        # print("total params")
+        # print(total_params)
+        # print(params)
 
-        # for param in params:
-        #     print(param)
+        # # for param in params:
+        # #     print(param)
 
-        for param in self.params:
-            print('here')
-            if param.requires_grad:
-                cur_count += np.prod(param.data.shape)
-            print('count')
-            print(cur_count)
-            if cur_count < total_params / 2:
-                self.params_list_0.append(param)
-            else:
-                self.params_list_1.append(param)
+        # for param in self.params:
+        #     print('here')
+        #     if param.requires_grad:
+        #         cur_count += np.prod(param.data.shape)
+        #     print('count')
+        #     print(cur_count)
+        #     if cur_count < total_params / 2:
+        #         self.params_list_0.append(param)
+        #     else:
+        #         self.params_list_1.append(param)
 
-        # make two optimizers with the different params 
-        self.opt = None 
+        # # make two optimizers with the different params 
+        # self.opt = None 
 
-        if self.rank == 0: 
-            self.opt = optimizer_cls(
-                self.params_list_0, **kwargs
-            )
-        elif self.rank == 1:
-            self.opt = optimizer_cls(
-                self.params_list_1, **kwargs
-            )
+        # if self.rank == 0: 
+        #     self.opt = optimizer_cls(
+        #         self.params_list_0, **kwargs
+        #     )
+        # elif self.rank == 1:
+        #     self.opt = optimizer_cls(
+        #         self.params_list_1, **kwargs
+        #     )
 
-        print(self.params_list_0)
-        print(self.params_list_1)
+        # print(self.params_list_0)
+        # print(self.params_list_1)
 
-        self.param_groups = self.opt.param_groups
-        self._optimizer_step_pre_hooks = self.opt._optimizer_step_pre_hooks
-        self._optimizer_step_post_hooks = self.opt._optimizer_step_post_hooks
+        # self.param_groups = self.opt.param_groups
+        # self._optimizer_step_pre_hooks = self.opt._optimizer_step_pre_hooks
+        # self._optimizer_step_post_hooks = self.opt._optimizer_step_post_hooks
 
         # raise NotImplementedError
     
@@ -136,5 +148,13 @@ class OptimizerSharded(torch.optim.Optimizer):
         # raise NotImplementedError
     
     def add_param_group(self, param_group: dict[str, Any]):
-        self.opt.add_param_group(param_group)
+        index = 0
+        for param in param_group:
+            if index % 0 == 0 and self.rank == 0: 
+                self.local_param_groups.append(param)
+            elif index % 1 == 1 and self.rank == 1: 
+                self.local_param_groups.append(param)
+            index += 1
+
+        self.opt.add_param_group(self.local_param_groups)
         # raise NotImplementedError

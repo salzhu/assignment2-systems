@@ -71,7 +71,7 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
         params = ddp_model.state_dict()
         print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, ", flush=True)
 
-    torch.cuda.memory._record_memory_history(max_entries=1000000)
+    # torch.cuda.memory._record_memory_history(max_entries=1000000)
     
     for step in range(warmup_steps, num_steps):
         torch.cuda.synchronize()
@@ -101,8 +101,8 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
 
         step_times.append(end_time_step - start_time_step)
 
-    torch.cuda.memory._dump_snapshot(f"ddp_{context_length}_{rank}_overlap.pickle")
-    torch.cuda.memory._record_memory_history(enabled=None)
+    # torch.cuda.memory._dump_snapshot(f"ddp_{context_length}_{rank}_overlap.pickle")
+    # torch.cuda.memory._record_memory_history(enabled=None)
     
     # state_dicts.append(model.state_dict())
     cleanup()

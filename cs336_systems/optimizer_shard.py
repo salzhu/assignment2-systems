@@ -35,7 +35,7 @@ class OptimizerSharded(torch.optim.Optimizer):
             #     print('getting here')
             #     total_params += np.prod(param.data.shape)
 
-        self.local_param_groups = [] 
+        self.local_param_groups = {'params': []} 
 
 
         # make self.local_params variable
@@ -57,7 +57,7 @@ class OptimizerSharded(torch.optim.Optimizer):
         print(list(hyperparams.keys()))
         print(self.local_param_groups)
         self.opt = optimizer_cls(
-            self.local_param_groups['params'], **kwargs
+            self.local_param_groups, **kwargs
         )
         # self.opt. add param group? 
 
@@ -151,11 +151,11 @@ class OptimizerSharded(torch.optim.Optimizer):
     
     def add_param_group(self, param_group: dict[str, Any]):
         index = 0
-        for param in param_group:
+        for param in param_group['params']:
             if index % 2 == 0 and self.rank == 0: 
-                self.local_param_groups.append(param)
+                self.local_param_groups['params'].append(param)
             elif index % 2 == 1 and self.rank == 1: 
-                self.local_param_groups.append(param)
+                self.local_param_groups['params'].append(param)
             index += 1
 
         # self.opt.add_param_group(self.local_param_groups)

@@ -81,6 +81,9 @@ class OptimizerSharded(torch.optim.Optimizer):
         # make two optimizers with the different params 
         self.opt = None 
 
+        print(self.params_list_0)
+        print(self.params_list_1)
+        
         if self.rank == 0: 
             self.opt = optimizer_cls(
                 self.params_list_0, **kwargs

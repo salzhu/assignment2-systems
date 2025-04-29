@@ -17,10 +17,10 @@ class OptimizerSharded(torch.optim.Optimizer):
         self.local_param_groups = []
         self.param_count = 0
 
+        self.params_order = []
+
         hyperparams = dict(**kwargs) 
         super().__init__(params, defaults=kwargs)
-
-        self.params_order = []
 
         self.opt = optimizer_cls(
             self.local_param_groups, **kwargs

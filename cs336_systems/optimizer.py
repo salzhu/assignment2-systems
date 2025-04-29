@@ -11,13 +11,15 @@ class OptimizerSharded(torch.optim.Optimizer):
     def __init__(self, params, optimizer_cls, **kwargs: Any):
 
         self.rank = dist.get_rank()
-        self.params = list(params)
+        
         self.defaults = dict(**kwargs)
 
         self.local_param_groups = []
 
         hyperparams = dict(**kwargs) 
         super().__init__(params, defaults=kwargs)
+
+        self.params = list(params)
 
         self.opt = optimizer_cls(
             self.local_param_groups, **kwargs

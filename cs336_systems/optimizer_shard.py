@@ -113,10 +113,10 @@ class OptimizerSharded(torch.optim.Optimizer):
         # half the parameters are now updated 
 
         if self.rank == 0: 
-            for param in self.params[:self.index]:
+            for param in self.params_list_0:
                 dist.broadcast(tensor=param.data,src=0)
         elif self.rank == 1: 
-            for param in self.params[self.index:]:
+            for param in self.params_list_1:
                 dist.broadcast(tensor=param.data,src=1)
 
         # raise NotImplementedError

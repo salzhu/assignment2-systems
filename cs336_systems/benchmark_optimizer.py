@@ -184,6 +184,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--sharded", type=bool, default=False)
     parser.add_argument("--len", type=int, default=256)
+    parser.add_argument("--exp", type=str, default='time')
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

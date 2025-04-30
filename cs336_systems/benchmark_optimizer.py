@@ -182,7 +182,7 @@ def memory_optimizer_main(rank, world_size,
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sharded", type=bool, default=False)
+    parser.add_argument("--sharded", type=int, default=0)
     parser.add_argument("--len", type=int, default=256)
     parser.add_argument("--exp", type=str, default='time')
     args = parser.parse_args()
@@ -205,7 +205,7 @@ if __name__ == '__main__':
 
     print(args.sharded, args.exp)
 
-    if args.sharded == False and args.exp == 'time':
+    if args.sharded == 0 and args.exp == 'time':
         times = manager.list()
         mp.spawn(time_optimizer_main, args=(world_size,
                                             vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
@@ -213,7 +213,7 @@ if __name__ == '__main__':
                         nprocs=world_size, join=True)
         print(f'sharded {args.sharded}')
         print(f'time {np.mean(times) * 1000} ms')
-    elif args.sharded == True and args.exp == 'time':
+    elif args.sharded == 1 and args.exp == 'time':
         times = manager.list()
         mp.spawn(time_optimizer_sharded_main, args=(world_size,
                                             vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
@@ -221,7 +221,7 @@ if __name__ == '__main__':
                         nprocs=world_size, join=True)
         print(f'sharded {args.sharded}')
         print(f'time {np.mean(times) * 1000} ms')
-    elif args.sharded == False and args.exp == 'memory': 
+    elif args.sharded == 0 and args.exp == 'memory': 
         mems_after_model_initialization = manager.list()
         mems_before_optimizer_step = manager.list()
         mems_after_optimizer_step = manager.list()

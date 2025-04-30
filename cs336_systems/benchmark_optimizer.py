@@ -32,8 +32,8 @@ def time_optimizer_main(rank, world_size,
 
     times = []
 
-    w = 30 
-    n = 70 
+    w = 20 
+    n = 40 
 
     inputs = torch.randint(0,vocab_size,(4, context_length)).cuda(rank)
     targets = torch.randint(0,vocab_size,(4, context_length)).cuda(rank)
@@ -44,7 +44,7 @@ def time_optimizer_main(rank, world_size,
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
 
     for step in range(w+n):
-        print(step, end= ' ')
+        print(step, end= ' ', flush=True)
 
         torch.cuda.synchronize()
         optimizer.zero_grad()

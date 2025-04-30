@@ -2,6 +2,7 @@ import os
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
+import torch.cuda.nvtx as nvtx
 
 import timeit 
 import pandas as pd 
@@ -58,25 +59,29 @@ def ddp_naive_main(rank, world_size, data_in, data_targ, weights,
         start_time_step = timeit.default_timer()
 
         print(f"Rank {rank} train step {step}")
-        # Forward pass
-        inputs = data_in[step]
-        targets = data_targ[step]
+        with nvtx.range(f"forward{step}"):
+            # Forward pass
+            inputs = data_in[step]
+            targets = data_targ[step]
 
-        outputs = model(inputs)
+            outputs = model(inputs)
 
-        outputs = outputs.view(-1, outputs.size(-1))
-        targets = targets.view(-1)
-        
-        loss = cross_entropy(outputs, targets)
-        loss.backward()
+            outputs = outputs.view(-1, outputs.size(-1))
+            targets = targets.view(-1)
+            
+            loss = cross_entropy(outputs, targets)
+            
+        with nvtx.range(f"backward{step}"):
+            loss.backward()
 
         torch.cuda.synchronize()
 
         start_time_grad = timeit.default_timer()
         
         # Sync gradients across workers (only difference between standard training and DDP)
-        for param in model.parameters():
-            dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=False)
+        with nvtx.range(f"gradsync{step}"):
+            for param in model.parameters():
+                dist.all_reduce(tensor=param.grad, op=dist.ReduceOp.AVG, async_op=False)
 
         torch.cuda.synchronize()
 

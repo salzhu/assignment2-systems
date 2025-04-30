@@ -82,18 +82,21 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
 
             print(f"Rank {rank} train step {step}")
             # Forward pass
-            inputs = data_in[step]
-            targets = data_targ[step]
+            with nvtx.range(f"forward{step}"):
+                inputs = data_in[step]
+                targets = data_targ[step]
 
-            outputs = ddp_model(inputs)
+                outputs = ddp_model(inputs)
 
-            outputs = outputs.view(-1, outputs.size(-1))
-            targets = targets.view(-1)
-            
-            loss = cross_entropy(outputs, targets)
+                outputs = outputs.view(-1, outputs.size(-1))
+                targets = targets.view(-1)
+                
+                loss = cross_entropy(outputs, targets)
             with nvtx.range(f"backward{step}"):
                 loss.backward()
-            ddp_model.finish_gradient_synchronization() 
+
+            with nvtx.range(f"gradsync{step}"):
+                ddp_model.finish_gradient_synchronization() 
             
             # Update parameters
             optimizer.step()
@@ -214,8 +217,8 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     world_size=2
 
-    w = 20
-    n = 50
+    w = 40
+    n = 60
     batch_size = 4
     context_length = 256
 

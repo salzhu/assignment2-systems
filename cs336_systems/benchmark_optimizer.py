@@ -139,7 +139,8 @@ def memory_optimizer_main(rank, world_size,
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
     torch.cuda.reset_peak_memory_stats()
 
-    print('init', end=' ')
+    print('init', end=' ', flush=True)
+    print(mem_after_model_initialization / 1048576, flush=True)
     mems_after_model_initialization.append(mem_after_model_initialization)
 
     for step in range(w+n):
@@ -174,8 +175,8 @@ def memory_optimizer_main(rank, world_size,
         if step >= w:
             mems_before_optimizer_step.append(mem_before_optimizer_step)
             mems_after_optimizer_step.append(mem_after_optimizer_step)
-            print(f'b{mems_before_optimizer_step / 1048576}', end=' ')
-            print(f'a{mem_after_optimizer_step / 1048576}', end=' ')
+            print(f'b{mem_before_optimizer_step / 1048576}', end=' ', flush=True)
+            print(f'a{mem_after_optimizer_step / 1048576}', end=' ', flush=True)
             # times.append(end_time - start_time)
             # print(1000 * (end_time - start_time), end=' ')
 
@@ -208,8 +209,8 @@ def memory_optimizer_sharded_main(rank, world_size,
     torch.cuda.reset_peak_memory_stats()
 
     mems_after_model_initialization.append(mem_after_model_initialization)
-    print('init', end=' ')
-    print(mem_after_model_initialization / 1048576)
+    print('init', end=' ', flush=True)
+    print(mem_after_model_initialization / 1048576, flush=True)
 
     for step in range(w+n):
 
@@ -243,8 +244,8 @@ def memory_optimizer_sharded_main(rank, world_size,
         if step >= w:
             mems_before_optimizer_step.append(mem_before_optimizer_step)
             mems_after_optimizer_step.append(mem_after_optimizer_step)
-            print(f'b{mems_before_optimizer_step / 1048576}', end=' ')
-            print(f'a{mem_after_optimizer_step / 1048576}', end=' ')
+            print(f'b{mem_before_optimizer_step / 1048576}', end=' ', flush=True)
+            print(f'a{mem_after_optimizer_step / 1048576}', end=' ', flush=True)
             # times.append(end_time - start_time)
             # print(1000 * (end_time - start_time), end=' ')
 

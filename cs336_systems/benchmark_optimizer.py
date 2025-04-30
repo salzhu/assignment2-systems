@@ -203,6 +203,8 @@ if __name__ == '__main__':
 
     world_size = 2
 
+    print(args.sharded, args.exp)
+
     if args.sharded == False and args.exp == 'time':
         times = manager.list()
         mp.spawn(time_optimizer_main, args=(world_size,

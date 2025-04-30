@@ -30,8 +30,6 @@ def time_optimizer_main(rank, world_size,
 
     setup(rank, world_size)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
-
     times = []
 
     w = 30 
@@ -42,6 +40,8 @@ def time_optimizer_main(rank, world_size,
 
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
     model.to(device)
+
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
 
     for step in range(w+n):
         print(step, end= ' ')

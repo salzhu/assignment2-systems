@@ -198,7 +198,7 @@ class DDPOverlapBucketed(torch.nn.Module):
                 if param.requires_grad:
                     if index in param_ids:
                         if param.grad is None:
-                            flat_list.append(torch.zeros(param.shape))
+                            flat_list.append(torch.zeros(param.shape,device=param.device))
                         else:
                             flat_list.append(param.grad)
                     index += 1

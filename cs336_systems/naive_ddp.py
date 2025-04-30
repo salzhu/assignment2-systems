@@ -178,6 +178,7 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
         
         # Update parameters
         optimizer.step()
+        torch.cuda.synchronize(device=device)
         end_time_step = timeit.default_timer()
         
         params = model.state_dict()

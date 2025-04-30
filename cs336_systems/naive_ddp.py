@@ -84,6 +84,7 @@ def ddp_naive_main(rank, world_size, data_in, data_targ, weights,
         
         # Update parameters
         optimizer.step()
+        torch.cuda.synchronize()
         end_time_step = timeit.default_timer()
         
         params = model.state_dict()

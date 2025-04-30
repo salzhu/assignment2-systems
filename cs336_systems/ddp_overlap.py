@@ -201,23 +201,24 @@ class DDPOverlapBucketed(torch.nn.Module):
                     index += 1
 
             # print(flat_list)
-            flat_grads = torch._utils._flatten_dense_tensors(flat_list)
-            # all reduce
-            handle = dist.all_reduce(tensor=flat_grads, op=dist.ReduceOp.SUM, async_op=True)
-            # unflatten 
-            unflat_grads = torch._utils._unflatten_dense_tensors(flat_grads, flat_list)
+            if flat_list != [] and flat_list is not None:
+                flat_grads = torch._utils._flatten_dense_tensors(flat_list)
+                # all reduce
+                handle = dist.all_reduce(tensor=flat_grads, op=dist.ReduceOp.SUM, async_op=True)
+                # unflatten 
+                unflat_grads = torch._utils._unflatten_dense_tensors(flat_grads, flat_list)
 
-            count_grad = 0 
-            index = 0 
-            for param in self.module.parameters():
-                if param.requires_grad:
-                    if index in param_ids:
-                        param.grad = unflat_grads[count_grad] # divide 
-                        # param.grad.div_(2)
-                        count_grad += 1
-                    index += 1
-        
-            self.handles.append(handle)
+                count_grad = 0 
+                index = 0 
+                for param in self.module.parameters():
+                    if param.requires_grad:
+                        if index in param_ids:
+                            param.grad = unflat_grads[count_grad] # divide 
+                            # param.grad.div_(2)
+                            count_grad += 1
+                        index += 1
+            
+                self.handles.append(handle)
             return None 
         return hook 
     

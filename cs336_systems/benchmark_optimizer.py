@@ -26,7 +26,6 @@ def cleanup():
 
 def time_optimizer_main(rank, world_size, 
                         vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
-                        inputs, targets, 
                         times):
 
     setup(rank, world_size)
@@ -45,6 +44,7 @@ def time_optimizer_main(rank, world_size,
     model.to(device)
 
     for step in range(w+n):
+        print(step, end= ' ')
 
         torch.cuda.synchronize()
         optimizer.zero_grad()

@@ -200,7 +200,7 @@ class DDPOverlapBucketed(torch.nn.Module):
                         flat_list.append(param.grad)
                     index += 1
 
-            # print(flat_list)
+            print(flat_list)
             if flat_list != [] and flat_list is not None:
                 flat_grads = torch._utils._flatten_dense_tensors(flat_list)
                 # all reduce

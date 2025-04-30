@@ -16,15 +16,38 @@ from cs336_basics.optimizer import AdamW
 from cs336_basics.nn_utils import cross_entropy
 from cs336_basics.model import BasicsTransformerLM 
 
-def time_optimizer(model, inputs, targets, w, n):
+def setup(rank, world_size):
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "28500"
+    dist.init_process_group("nccl", rank=rank, world_size=world_size) # gloo
+
+def cleanup():
+    dist.destroy_process_group()
+
+def time_optimizer_main(rank, world_size, 
+                        vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
+                        inputs, targets, 
+                        times):
+
+    setup(rank, world_size)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
 
     times = []
 
+    w = 30 
+    n = 70 
+
+    inputs = torch.randint(0,vocab_size,(4, context_length), device=device)
+    targets = torch.randint(0,vocab_size,(4, context_length), device=device)
+
+    model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
+    model.to(device)
+
     for step in range(w+n):
 
         torch.cuda.synchronize()
+        optimizer.zero_grad()
 
         start_time = timeit.default_timer()
 
@@ -44,6 +67,7 @@ def time_optimizer(model, inputs, targets, w, n):
         if step >= w:
             times.append(end_time - start_time)
 
+    cleanup()
     return np.mean(times)
 
 if __name__ == '__main__':
@@ -65,12 +89,15 @@ if __name__ == '__main__':
     num_heads = 25
     rope_theta = 10000
 
-    model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
-    model.to(device)
+    manager = mp.Manager()
+    times = manager.list()
 
-    inputs = torch.randint(0,vocab_size,(batch_size, context_length), device=device)
-    targets = torch.randint(0,vocab_size,(batch_size, context_length), device=device)
+    world_size = 2
 
-    time = time_optimizer(model, inputs, targets, 30, 70, sharded=args.sharded)
+    mp.spawn(time_optimizer_main, args=(world_size,
+                                        vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
+                                        times), 
+                    nprocs=world_size, join=True)
+
     print(f'sharded {args.sharded}')
-    print(f'time {time * 1000} ms')
+    print(f'time {np.mean(times) * 1000} ms')

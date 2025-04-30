@@ -35,11 +35,11 @@ def time_optimizer_main(rank, world_size,
     w = 30 
     n = 70 
 
-    inputs = torch.randint(0,vocab_size,(4, context_length), device=device)
-    targets = torch.randint(0,vocab_size,(4, context_length), device=device)
+    inputs = torch.randint(0,vocab_size,(4, context_length)).cuda(rank)
+    targets = torch.randint(0,vocab_size,(4, context_length)).cuda(rank)
 
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
-    model.to(device)
+    model.cuda(rank)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
 

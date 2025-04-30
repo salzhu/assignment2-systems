@@ -129,6 +129,7 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
     model.load_state_dict(weights)
     model = model.cuda(rank)
+    dist.barrier()
 
     # train one step 
     # loss.backward() and get gradients, reduce 
@@ -142,8 +143,10 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
 
     num_steps = data_in.shape[0]
     warmup_steps = 20
+    dist.barrier()
 
     for step in range(num_steps):
+        optimizer.zero_grad()
         torch.cuda.synchronize()
 
         start_time_step = timeit.default_timer()
@@ -160,6 +163,7 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
         
         loss = cross_entropy(outputs, targets)
         loss.backward()
+        dist.barrier()
 
         torch.cuda.synchronize()
 
@@ -191,7 +195,9 @@ def ddp_flat_main(rank, world_size, data_in, data_targ, weights,
         end_time_grad = timeit.default_timer()
         
         # Update parameters
+        dist.barrier()
         optimizer.step()
+        
         torch.cuda.synchronize(device=device)
         end_time_step = timeit.default_timer()
         

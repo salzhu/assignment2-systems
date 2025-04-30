@@ -42,6 +42,7 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
     # model.load_state_dict(weights)
     model = model.cuda(rank)
     ddp_model = DDPIndividualParameters(model)
+    dist.barrier()
 
     optimizer = torch.optim.AdamW(ddp_model.parameters(), lr=1e-3)  # Each rank has own optimizer state
 
@@ -50,6 +51,7 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
 
 
     for step in range(warmup_steps):
+        optimizer.zero_grad()
         torch.cuda.synchronize()
 
         print(f"Rank {rank} train step {step}")
@@ -73,6 +75,7 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
         print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, ", flush=True)
 
     # torch.cuda.memory._record_memory_history(max_entries=1000000)
+    dist.barrier()
     
     with nvtx.range("record"):
         for step in range(warmup_steps, num_steps):

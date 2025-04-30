@@ -69,6 +69,54 @@ def time_optimizer_main(rank, world_size,
     cleanup()
     # return np.mean(times)
 
+def time_optimizer_sharded_main(rank, world_size, 
+                        vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
+                        times):
+
+    setup(rank, world_size)
+
+    w = 20 
+    n = 40 
+
+    inputs = torch.randint(0,vocab_size,(4, context_length)).cuda(rank)
+    targets = torch.randint(0,vocab_size,(4, context_length)).cuda(rank)
+
+    model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
+    model.cuda(rank)
+
+    optimizer = OptimizerSharded(
+        model.parameters(),
+        torch.optim.AdamW,
+        lr=1e-3
+    )
+
+    for step in range(w+n):
+        print(step, end= ' ', flush=True)
+
+        torch.cuda.synchronize()
+        optimizer.zero_grad()
+
+        start_time = timeit.default_timer()
+
+        outputs = model(inputs)
+
+        outputs = outputs.view(-1, outputs.size(-1))
+        targets = targets.view(-1)
+        
+        loss = cross_entropy(outputs, targets)
+        loss.backward()
+
+        optimizer.step()
+        torch.cuda.synchronize()
+
+        end_time = timeit.default_timer()
+
+        if step >= w:
+            times.append(end_time - start_time)
+            print(1000 * (end_time - start_time), end=' ')
+
+    cleanup()
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -93,10 +141,16 @@ if __name__ == '__main__':
 
     world_size = 2
 
-    mp.spawn(time_optimizer_main, args=(world_size,
-                                        vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
-                                        times), 
-                    nprocs=world_size, join=True)
+    if args.sharded == False:
+        mp.spawn(time_optimizer_main, args=(world_size,
+                                            vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
+                                            times), 
+                        nprocs=world_size, join=True)
+    elif args.sharded == True:
+        mp.spawn(time_optimizer_sharded_main, args=(world_size,
+                                            vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
+                                            times), 
+                        nprocs=world_size, join=True)
 
     print(f'sharded {args.sharded}')
     print(f'time {np.mean(times) * 1000} ms')

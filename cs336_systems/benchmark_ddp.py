@@ -47,7 +47,7 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
     optimizer = torch.optim.AdamW(ddp_model.parameters(), lr=1e-3)  # Each rank has own optimizer state
 
     num_steps = data_in.shape[0]
-    warmup_steps = 20
+    warmup_steps = 40
 
 
     for step in range(warmup_steps):
@@ -103,8 +103,9 @@ def ddp_overlap_main(rank, world_size, data_in, data_targ,
             
             # Update parameters
             optimizer.step()
-            torch.cuda.synchronize()
+            
             end_time_step = timeit.default_timer()
+            torch.cuda.synchronize()
             
             params = ddp_model.state_dict()
             print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, ", flush=True)
@@ -137,11 +138,14 @@ def ddp_overlap_bucketed_main(rank, world_size, data_in, data_targ,
     # model.load_state_dict(weights)
     model = model.cuda(rank)
     ddp_model = DDPOverlapBucketed(model, bucket_size)
+    dist.barrier()
 
     optimizer = torch.optim.AdamW(ddp_model.parameters(), lr=1e-3)  # Each rank has own optimizer state
 
     num_steps = data_in.shape[0]
     warmup_steps = 20
+
+    dist.barrier()
 
 
     for step in range(warmup_steps):
@@ -168,6 +172,7 @@ def ddp_overlap_bucketed_main(rank, world_size, data_in, data_targ,
         print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, ", flush=True)
 
     # torch.cuda.memory._record_memory_history(max_entries=1000000)
+    dist.barrier()
     
     for step in range(warmup_steps, num_steps):
         torch.cuda.synchronize()
@@ -190,8 +195,9 @@ def ddp_overlap_bucketed_main(rank, world_size, data_in, data_targ,
         
         # Update parameters
         optimizer.step()
-        torch.cuda.synchronize()
+        
         end_time_step = timeit.default_timer()
+        torch.cuda.synchronize()
         
         params = ddp_model.state_dict()
         print(f"[data_parallelism] Rank {rank}: step = {step}, loss = {loss.item()}, ", flush=True)

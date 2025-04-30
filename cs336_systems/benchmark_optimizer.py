@@ -66,9 +66,10 @@ def time_optimizer_main(rank, world_size,
 
         if step >= w:
             times.append(end_time - start_time)
+            print(1000 * (end_time - start_time), end=' ')
 
     cleanup()
-    return np.mean(times)
+    # return np.mean(times)
 
 if __name__ == '__main__':
 

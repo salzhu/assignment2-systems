@@ -30,8 +30,6 @@ def time_optimizer_main(rank, world_size,
 
     setup(rank, world_size)
 
-    times = []
-
     w = 20 
     n = 40 
 

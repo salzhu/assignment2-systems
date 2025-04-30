@@ -173,7 +173,73 @@ def memory_optimizer_main(rank, world_size,
         if step >= w:
             mems_before_optimizer_step.append(mem_before_optimizer_step)
             mems_after_optimizer_step.append(mem_after_optimizer_step)
-            print(mem_after_optimizer_step)
+            print(mem_after_optimizer_step, end=' ')
+            # times.append(end_time - start_time)
+            # print(1000 * (end_time - start_time), end=' ')
+
+    cleanup()
+
+def memory_optimizer_sharded_main(rank, world_size, 
+                        vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
+                        mems_after_model_initialization, mems_before_optimizer_step, mems_after_optimizer_step):
+
+    setup(rank, world_size)
+
+    w = 20 
+    n = 40 
+
+    inputs = torch.randint(0,vocab_size,(4, context_length)).cuda(rank)
+    targets = torch.randint(0,vocab_size,(4, context_length)).cuda(rank)
+
+    torch.cuda.reset_peak_memory_stats()
+
+    model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
+    model.cuda(rank)
+    mem_after_model_initialization = torch.cuda.max_memory_allocated()
+    torch.cuda.reset_peak_memory_stats()
+
+    optimizer = OptimizerSharded(
+        model.parameters(),
+        torch.optim.AdamW,
+        lr=1e-3
+    )
+    torch.cuda.reset_peak_memory_stats()
+
+    mems_after_model_initialization.append(mem_after_model_initialization)
+
+    for step in range(w+n):
+
+        torch.cuda.reset_peak_memory_stats()
+        
+        print(step, end= ' ', flush=True)
+
+        torch.cuda.synchronize()
+        optimizer.zero_grad()
+
+        # start_time = timeit.default_timer()
+
+        outputs = model(inputs)
+
+        outputs = outputs.view(-1, outputs.size(-1))
+        targets = targets.view(-1)
+        
+        loss = cross_entropy(outputs, targets)
+        loss.backward()
+
+        mem_before_optimizer_step = torch.cuda.max_memory_allocated()
+        torch.cuda.reset_peak_memory_stats()
+
+        optimizer.step()
+        torch.cuda.synchronize()
+
+        mem_after_optimizer_step = torch.cuda.max_memory_allocated()
+
+        # end_time = timeit.default_timer()
+
+        if step >= w:
+            mems_before_optimizer_step.append(mem_before_optimizer_step)
+            mems_after_optimizer_step.append(mem_after_optimizer_step)
+            print(mem_after_optimizer_step, end=' ')
             # times.append(end_time - start_time)
             # print(1000 * (end_time - start_time), end=' ')
 
@@ -230,8 +296,21 @@ if __name__ == '__main__':
                                             mems_after_model_initialization, mems_before_optimizer_step, mems_after_optimizer_step), 
                         nprocs=world_size, join=True)
         print(f'sharded {args.sharded}')
-        print(f'mem after model init {np.mean(mems_after_model_initialization) * 1024} MB')
-        print(f'mem before optimizer step {np.mean(mems_before_optimizer_step) * 1024} MB')
-        print(f'mem after optimizer step {np.mean(mems_after_optimizer_step) * 1024} MB')
+        print(f'mem after model init {np.mean(mems_after_model_initialization) / 1024} MB')
+        print(f'mem before optimizer step {np.mean(mems_before_optimizer_step) / 1024} MB')
+        print(f'mem after optimizer step {np.mean(mems_after_optimizer_step) / 1024} MB')
+    elif args.sharded == 1 and args.exp == 'memory': 
+        mems_after_model_initialization = manager.list()
+        mems_before_optimizer_step = manager.list()
+        mems_after_optimizer_step = manager.list()
+        mp.spawn(memory_optimizer_sharded_main, args=(world_size,
+                                            vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta,
+                                            mems_after_model_initialization, mems_before_optimizer_step, mems_after_optimizer_step), 
+                        nprocs=world_size, join=True)
+        print(f'sharded {args.sharded}')
+        print(f'mem after model init {np.mean(mems_after_model_initialization) / 1024} MB')
+        print(f'mem before optimizer step {np.mean(mems_before_optimizer_step) / 1024} MB')
+        print(f'mem after optimizer step {np.mean(mems_after_optimizer_step) / 1024} MB')
+
 
     
